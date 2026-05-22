@@ -1,58 +1,5 @@
 <template>
   <div class="rich-editor" :class="{ 'rich-editor--readonly': readOnly }">
-    <div ref="toolbarRef" class="rich-editor__toolbar">
-      <span class="ql-formats">
-        <select class="ql-header">
-          <option value="1"></option>
-          <option value="2"></option>
-          <option value="" selected></option>
-        </select>
-      </span>
-
-      <span class="ql-formats">
-        <button class="ql-bold" type="button"></button>
-        <button class="ql-italic" type="button"></button>
-        <button class="ql-underline" type="button"></button>
-        <button class="ql-strike" type="button"></button>
-      </span>
-
-      <span class="ql-formats">
-        <button class="ql-list" type="button" value="ordered"></button>
-        <button class="ql-list" type="button" value="bullet"></button>
-        <button class="ql-blockquote" type="button"></button>
-        <button class="ql-code-block" type="button"></button>
-      </span>
-
-      <span class="ql-formats">
-        <button class="ql-link" type="button"></button>
-        <button
-          class="ql-edmImage"
-          type="button"
-          :disabled="isBusy"
-          title="上传图片"
-          aria-label="上传图片"
-        ></button>
-        <button
-          class="ql-edmVideo"
-          type="button"
-          :disabled="isBusy"
-          title="上传视频"
-          aria-label="上传视频"
-        ></button>
-        <button
-          class="ql-edmFile"
-          type="button"
-          :disabled="isBusy"
-          title="上传文件"
-          aria-label="上传文件"
-        ></button>
-      </span>
-
-      <span class="ql-formats">
-        <button class="ql-clean" type="button"></button>
-      </span>
-    </div>
-
     <div class="rich-editor__canvas">
       <div ref="editorRef" class="rich-editor__body"></div>
       <div v-if="isBusy" class="rich-editor__uploading" role="status">
@@ -136,7 +83,6 @@ const emit = defineEmits<{
   'upload-error': [EdmUploadErrorPayload];
 }>();
 
-const toolbarRef = ref<HTMLDivElement | null>(null);
 const editorRef = ref<HTMLDivElement | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const videoInputRef = ref<HTMLInputElement | null>(null);
@@ -146,6 +92,14 @@ const errorMessage = ref('');
 const lastHtml = ref('');
 
 let quill: Quill | null = null;
+
+const toolbarConfig = [
+  [{ header: [1, 2, false] }],
+  ['bold', 'italic', 'underline', 'strike'],
+  [{ list: 'ordered' }, { list: 'bullet' }, 'blockquote', 'code-block'],
+  ['link', 'edmImage', 'edmVideo', 'edmFile'],
+  ['clean'],
+];
 
 const isBusy = computed(() => uploadingKind.value !== null);
 
@@ -164,7 +118,7 @@ const uploadingLabel = computed(() => {
 onMounted(() => {
   registerEdmBlots();
 
-  if (!editorRef.value || !toolbarRef.value) {
+  if (!editorRef.value) {
     return;
   }
 
@@ -174,7 +128,7 @@ onMounted(() => {
     readOnly: props.readOnly,
     modules: {
       toolbar: {
-        container: toolbarRef.value,
+        container: toolbarConfig,
         handlers: {
           edmImage: () => openFilePicker('image'),
           edmVideo: () => openFilePicker('video'),
@@ -450,12 +404,6 @@ function getErrorMessage(error: unknown): string {
   background: #f8fafc;
 }
 
-.rich-editor__toolbar {
-  border: 0;
-  border-bottom: 1px solid #d7dee8;
-  background: #fbfcfe;
-}
-
 .rich-editor__canvas {
   position: relative;
 }
@@ -504,6 +452,8 @@ function getErrorMessage(error: unknown): string {
 
 :deep(.ql-toolbar.ql-snow) {
   border: 0;
+  border-bottom: 1px solid #d7dee8;
+  background: #fbfcfe;
 }
 
 :deep(.ql-toolbar button svg) {
