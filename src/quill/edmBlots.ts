@@ -185,5 +185,18 @@ export function registerEdmBlots(): void {
     true,
   );
 
+  const icons = Quill.import('ui/icons') as Record<string, string>;
+  if (!icons['edmImage'] && icons['image']) {
+    icons['edmImage'] = icons['image'];
+  }
+
+  if (!icons['edmVideo'] && icons['video']) {
+    icons['edmVideo'] = icons['video'];
+  }
+
+  if (!icons['edmFile'] && icons['link']) {
+    icons['edmFile'] = icons['link'];
+  }
+
   registered = true;
 }

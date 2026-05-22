@@ -31,27 +31,21 @@
           :disabled="isBusy"
           title="上传图片"
           aria-label="上传图片"
-        >
-          <ImageIcon aria-hidden="true" />
-        </button>
+        ></button>
         <button
           class="ql-edmVideo"
           type="button"
           :disabled="isBusy"
           title="上传视频"
           aria-label="上传视频"
-        >
-          <VideoIcon aria-hidden="true" />
-        </button>
+        ></button>
         <button
           class="ql-edmFile"
           type="button"
           :disabled="isBusy"
           title="上传文件"
           aria-label="上传文件"
-        >
-          <PaperclipIcon aria-hidden="true" />
-        </button>
+        ></button>
       </span>
 
       <span class="ql-formats">
@@ -62,7 +56,7 @@
     <div class="rich-editor__canvas">
       <div ref="editorRef" class="rich-editor__body"></div>
       <div v-if="isBusy" class="rich-editor__uploading" role="status">
-        <Loader2Icon aria-hidden="true" />
+        <span class="rich-editor__spinner" aria-hidden="true"></span>
         <span>{{ uploadingLabel }}</span>
       </div>
     </div>
@@ -101,12 +95,6 @@ import 'quill/dist/quill.snow.css';
 
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import Quill from 'quill';
-import {
-  Image as ImageIcon,
-  Loader2 as Loader2Icon,
-  Paperclip as PaperclipIcon,
-  Video as VideoIcon,
-} from 'lucide-vue-next';
 import { registerEdmBlots } from '../quill/edmBlots';
 import type {
   EdmEmbedValue,
@@ -496,10 +484,13 @@ function getErrorMessage(error: unknown): string {
   box-shadow: 0 8px 24px rgba(23, 108, 86, 0.12);
 }
 
-.rich-editor__uploading svg {
+.rich-editor__spinner {
   width: 16px;
   height: 16px;
-  animation: rich-editor-spin 0.8s linear infinite;
+  border: 2px solid #b7d6cb;
+  border-top-color: #176c56;
+  border-radius: 50%;
+  animation: rich-editor-spin 0.7s linear infinite;
 }
 
 .rich-editor__error {
