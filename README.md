@@ -12,6 +12,7 @@ Vue 3 + TypeScript + Quill 2.0.3 富文本编辑器，内置图片、视频、�
 - **拖拽/粘贴上传** — 支持拖拽文件到编辑器或粘贴剪贴板中的文件
 - **配置式工具栏** — 工具栏通过 Quill 原生配置数组定义，无需手写模板
 - **Quill 内置图标** — 自定义按钮复用 Quill 原生 image/video/link 图标
+- **HTML 查看器** — 提供 `EdmContentViewer` 组件，渲染编辑器输出的 HTML，自动解析图片/视频预览地址和文件下载链接
 - **不侵入 Quill** — 自定义 blot 使用独立名称，不影响 Quill 默认的 `image`、`video`、`link` 格式
 
 ## 安装
@@ -101,6 +102,26 @@ function resolveDownloadUrl(edmId: string): string {
 | `upload-start` | `{ file: File; kind: EdmUploadKind }` | 文件开始上传 |
 | `upload-success` | `{ file: File; kind: EdmUploadKind; result: EdmUploadResult }` | 文件上传成功 |
 | `upload-error` | `{ file: File; kind: EdmUploadKind; error: unknown }` | 文件上传失败 |
+
+## EdmContentViewer
+
+用于渲染富文本编辑器生成的 HTML 内容。自动根据 `data-edm-id` 解析图片/视频的预览地址和文件的下载地址。
+
+```vue
+<EdmContentViewer
+  :content="html"
+  :resolve-preview-url="resolvePreviewUrl"
+  :resolve-download-url="resolveDownloadUrl"
+/>
+```
+
+### Props
+
+| 属性 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `content` | `string` | 否 | `''` | 编辑器生成的 HTML 内容 |
+| `resolvePreviewUrl` | `EdmUrlResolver` | 否 | — | 图片/视频预览地址解析 |
+| `resolveDownloadUrl` | `EdmUrlResolver` | 否 | — | 下载地址解析（文件使用此地址） |
 
 ### 类型
 
