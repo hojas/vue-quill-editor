@@ -18,6 +18,7 @@
     "src/index.ts",
     "src/types/**/*.ts",
     "src/quill/**/*.ts",
+    "src/composables/**/*.ts",
     "src/components/**/*.vue"
   ]
 }
