@@ -47,6 +47,7 @@ function normalizeValue(value: EdmEmbedValue | string): EdmEmbedValue {
   }
   return {
     edmId: value.edmId,
+    attachmentId: value.attachmentId,
     url: value.url || defaultEdmDownloadUrl(value.edmId),
     name: value.name,
     mimeType: value.mimeType,
@@ -71,6 +72,9 @@ function setCommonAttributes(
 ): void {
   node.setAttribute('data-edm-id', value.edmId);
   node.setAttribute('data-edm-type', kind);
+  if (typeof value.attachmentId === 'number') {
+    node.setAttribute('data-attachment-id', String(value.attachmentId));
+  }
   if (value.name) {
     node.setAttribute('data-file-name', value.name);
     node.setAttribute('title', value.name);
@@ -95,8 +99,11 @@ function readCommonValue(root: HTMLElement, urlAttribute: 'src' | 'href'): EdmEm
   const edmId = target.getAttribute('data-edm-id') || root.getAttribute('data-edm-id') || '';
   const fallbackUrl = edmId ? defaultEdmDownloadUrl(edmId) : '';
 
+  const attachmentIdRaw = target.getAttribute('data-attachment-id') || root.getAttribute('data-attachment-id');
+
   return {
     edmId,
+    attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined,
     url: target.getAttribute(urlAttribute) || fallbackUrl,
     name: target.getAttribute('data-file-name') || root.getAttribute('data-file-name') || target.getAttribute('title') || undefined,
     mimeType: target.getAttribute('data-mime-type') || root.getAttribute('data-mime-type') || undefined,

@@ -342,6 +342,7 @@ async function buildEmbedValue(
 
   return {
     edmId: result.edmId,
+    attachmentId: result.attachmentId,
     url: kind === 'file' ? downloadUrl : previewUrl || downloadUrl,
     name: result.fileName || file.name,
     mimeType: result.mimeType || file.type,

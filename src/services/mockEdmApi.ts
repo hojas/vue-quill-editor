@@ -31,8 +31,11 @@ export async function uploadToMockEdm(
     uploadedAt: new Date().toISOString(),
   });
 
+  const attachmentId = Date.now();
+
   return {
     edmId,
+    attachmentId,
     previewUrl: objectUrl,
     downloadUrl: objectUrl,
     fileName: file.name,

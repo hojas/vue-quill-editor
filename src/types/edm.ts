@@ -17,6 +17,8 @@ export type EdmUploadKind = 'image' | 'video' | 'file';
 export interface EdmUploadResult {
   /** 后端分配的 EDM 资源 ID，会写入 `data-edm-id` 属性 */
   edmId: string;
+  /** 后端分配的数字附件 ID，会写入 `data-attachment-id` 属性 */
+  attachmentId?: number;
   /** 预览地址（图片/视频） */
   previewUrl?: string;
   /** 下载地址 */
@@ -40,6 +42,8 @@ export interface EdmUploadResult {
 export interface EdmEmbedValue {
   /** EDM 资源 ID */
   edmId: string;
+  /** 数字附件 ID */
+  attachmentId?: number;
   /** 当前有效的资源 URL（preview 或 download） */
   url: string;
   /** 文件名 */
