@@ -115,7 +115,7 @@ const uploadingLabel = computed(() => {
   return '文件上传中';
 });
 
-onMounted(() => {
+onMounted(async () => {
   registerEdmBlots();
 
   if (!editorRef.value) {
@@ -145,9 +145,11 @@ onMounted(() => {
 
   if (props.modelValue) {
     quill.clipboard.dangerouslyPasteHTML(props.modelValue, 'silent');
+    await refreshEdmEmbeds();
+    syncHtmlFromEditor();
+  } else {
+    lastHtml.value = getEditorHtml();
   }
-
-  lastHtml.value = getEditorHtml();
 });
 
 onBeforeUnmount(() => {
@@ -164,7 +166,7 @@ onBeforeUnmount(() => {
 
 watch(
   () => props.modelValue,
-  (nextValue) => {
+  async (nextValue) => {
     if (!quill || nextValue === lastHtml.value) {
       return;
     }
@@ -174,11 +176,12 @@ watch(
 
     if (nextValue) {
       quill.clipboard.dangerouslyPasteHTML(nextValue, 'silent');
+      await refreshEdmEmbeds();
     }
 
     const nextIndex = Math.min(selection?.index || 0, quill.getLength() - 1);
     quill.setSelection(nextIndex, selection?.length || 0, 'silent');
-    lastHtml.value = getEditorHtml();
+    syncHtmlFromEditor();
   },
 );
 
@@ -312,6 +315,34 @@ async function resolveUrl(
   }
 
   return `/api/edm/${encodeURIComponent(edmId)}/download`;
+}
+
+async function refreshEdmEmbeds(): Promise<void> {
+  if (!quill) return;
+
+  const containers = quill.root.querySelectorAll<HTMLElement>('[data-edm-type]');
+
+  await Promise.allSettled(
+    Array.from(containers).map(async (container) => {
+      const edmId = container.getAttribute('data-edm-id');
+      const kind = container.getAttribute('data-edm-type') as EdmUploadKind;
+      if (!edmId || !kind) return;
+
+      const dummyResult: EdmUploadResult = { edmId };
+
+      if (kind === 'file') {
+        const url = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
+        const link = container.querySelector('a');
+        if (link) link.setAttribute('href', url);
+      } else {
+        const downloadUrl = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
+        const previewUrl = await resolveUrl(props.resolvePreviewUrl, edmId, kind, dummyResult);
+        const url = previewUrl || downloadUrl;
+        const media = container.querySelector('img, video');
+        if (media) media.setAttribute('src', url);
+      }
+    }),
+  );
 }
 
 function getBlotName(kind: EdmUploadKind): string {
