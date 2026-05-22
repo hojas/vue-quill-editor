@@ -2,38 +2,24 @@
   <div class="rich-editor" :class="{ 'rich-editor--readonly': readOnly }">
     <div class="rich-editor__canvas">
       <div ref="editorRef" class="rich-editor__body"></div>
+
+      <!-- Uploading overlay -->
       <div v-if="isBusy" class="rich-editor__uploading" role="status">
         <span class="rich-editor__spinner" aria-hidden="true"></span>
         <span>{{ uploadingLabel }}</span>
       </div>
     </div>
 
+    <!-- Error message -->
     <p v-if="errorMessage" class="rich-editor__error">{{ errorMessage }}</p>
 
-    <input
-      ref="imageInputRef"
-      class="rich-editor__input"
-      type="file"
-      :accept="imageAccept"
-      multiple
-      @change="handleFileInputChange('image', $event)"
-    />
-    <input
-      ref="videoInputRef"
-      class="rich-editor__input"
-      type="file"
-      :accept="videoAccept"
-      multiple
-      @change="handleFileInputChange('video', $event)"
-    />
-    <input
-      ref="fileInputRef"
-      class="rich-editor__input"
-      type="file"
-      :accept="fileAccept"
-      multiple
-      @change="handleFileInputChange('file', $event)"
-    />
+    <!-- Hidden file inputs -->
+    <input ref="imageInputRef" class="rich-editor__input" type="file" :accept="imageAccept" multiple
+      @change="handleFileInputChange('image', $event)" />
+    <input ref="videoInputRef" class="rich-editor__input" type="file" :accept="videoAccept" multiple
+      @change="handleFileInputChange('video', $event)" />
+    <input ref="fileInputRef" class="rich-editor__input" type="file" :accept="fileAccept" multiple
+      @change="handleFileInputChange('file', $event)" />
   </div>
 </template>
 
@@ -53,16 +39,50 @@ import type {
   EdmUrlResolver,
 } from '../types/edm';
 
+// ============================================================
+// Component definition
+// ============================================================
+
+defineOptions({ name: 'RichTextEditor' });
+
+// ============================================================
+// Props & emits
+// ============================================================
+
 const props = withDefaults(
   defineProps<{
+    /** 编辑器的 HTML 内容（v-model） */
     modelValue?: string;
+    /** Quill 编辑器的 placeholder */
     placeholder?: string;
+    /** 是否只读模式 */
     readOnly?: boolean;
+    /**
+     * 上传处理函数。
+     *
+     * 接收用户选择的文件和资源类型，返回包含 `edmId` 的结果。
+     * 使用者在此处对接自己的后端上传接口。
+     */
     upload: EdmUploadHandler;
+    /**
+     * 预览 URL 解析函数。
+     *
+     * 当上传结果未提供 `previewUrl` 时，编辑器通过此函数
+     * 根据 `edmId` 动态解析图片/视频的预览地址。
+     */
     resolvePreviewUrl?: EdmUrlResolver;
+    /**
+     * 下载 URL 解析函数。
+     *
+     * 当上传结果未提供 `downloadUrl` 时，编辑器通过此函数
+     * 根据 `edmId` 动态解析所有资源的下载地址。
+     */
     resolveDownloadUrl?: EdmUrlResolver;
+    /** 图片上传 accept 属性，默认 `image/*` */
     imageAccept?: string;
+    /** 视频上传 accept 属性，默认 `video/*` */
     videoAccept?: string;
+    /** 文件上传 accept 属性，默认不限制 */
     fileAccept?: string;
   }>(),
   {
@@ -76,12 +96,21 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
+  /** v-model 双向绑定事件 */
   'update:modelValue': [value: string];
+  /** 编辑器内容变更事件（与 update:modelValue 同时触发） */
   change: [value: string];
+  /** 单个文件开始上传 */
   'upload-start': [{ file: File; kind: EdmUploadKind }];
+  /** 单个文件上传成功 */
   'upload-success': [EdmUploadSuccessPayload];
+  /** 单个文件上传失败 */
   'upload-error': [EdmUploadErrorPayload];
 }>();
+
+// ============================================================
+// Refs & reactive state
+// ============================================================
 
 const editorRef = ref<HTMLDivElement | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
@@ -93,6 +122,11 @@ const lastHtml = ref('');
 
 let quill: Quill | null = null;
 
+// ============================================================
+// Toolbar config
+// ============================================================
+
+/** Quill 工具栏配置（容器数组形式，由 Quill 自动渲染 DOM） */
 const toolbarConfig = [
   [{ header: [1, 2, false] }],
   ['bold', 'italic', 'underline', 'strike'],
@@ -101,26 +135,26 @@ const toolbarConfig = [
   ['clean'],
 ];
 
+// ============================================================
+// Computed
+// ============================================================
+
 const isBusy = computed(() => uploadingKind.value !== null);
 
 const uploadingLabel = computed(() => {
-  if (uploadingKind.value === 'image') {
-    return '图片上传中';
-  }
-
-  if (uploadingKind.value === 'video') {
-    return '视频上传中';
-  }
-
+  if (uploadingKind.value === 'image') return '图片上传中';
+  if (uploadingKind.value === 'video') return '视频上传中';
   return '文件上传中';
 });
+
+// ============================================================
+// Lifecycle
+// ============================================================
 
 onMounted(async () => {
   registerEdmBlots();
 
-  if (!editorRef.value) {
-    return;
-  }
+  if (!editorRef.value) return;
 
   quill = new Quill(editorRef.value, {
     theme: 'snow',
@@ -143,6 +177,7 @@ onMounted(async () => {
   quill.root.addEventListener('drop', handleDrop);
   quill.root.addEventListener('dragover', handleDragOver);
 
+  // 加载初始内容并刷新嵌入元素的预览 URL
   if (props.modelValue) {
     quill.clipboard.dangerouslyPasteHTML(props.modelValue, 'silent');
     await refreshEdmEmbeds();
@@ -153,9 +188,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  if (!quill) {
-    return;
-  }
+  if (!quill) return;
 
   quill.off('text-change', syncHtmlFromEditor);
   quill.root.removeEventListener('paste', handlePaste);
@@ -164,12 +197,15 @@ onBeforeUnmount(() => {
   quill = null;
 });
 
+// ============================================================
+// Watchers
+// ============================================================
+
+/** 外部变更 modelValue 时同步编辑器内容 */
 watch(
   () => props.modelValue,
   async (nextValue) => {
-    if (!quill || nextValue === lastHtml.value) {
-      return;
-    }
+    if (!quill || nextValue === lastHtml.value) return;
 
     const selection = quill.getSelection();
     quill.setText('', 'silent');
@@ -185,31 +221,24 @@ watch(
   },
 );
 
+/** 只读状态变更 */
 watch(
   () => props.readOnly,
-  (nextReadOnly) => {
-    quill?.enable(!nextReadOnly);
-  },
+  (nextReadOnly) => quill?.enable(!nextReadOnly),
 );
 
-function openFilePicker(kind: EdmUploadKind): void {
-  if (props.readOnly || isBusy.value) {
-    return;
-  }
+// ============================================================
+// File picker
+// ============================================================
 
-  const input = getInputRef(kind).value;
-  input?.click();
+function openFilePicker(kind: EdmUploadKind): void {
+  if (props.readOnly || isBusy.value) return;
+  getInputRef(kind).value?.click();
 }
 
 function getInputRef(kind: EdmUploadKind) {
-  if (kind === 'image') {
-    return imageInputRef;
-  }
-
-  if (kind === 'video') {
-    return videoInputRef;
-  }
-
+  if (kind === 'image') return imageInputRef;
+  if (kind === 'video') return videoInputRef;
   return fileInputRef;
 }
 
@@ -217,24 +246,22 @@ async function handleFileInputChange(kind: EdmUploadKind, event: Event): Promise
   const input = event.target as HTMLInputElement;
   const files = Array.from(input.files || []);
   input.value = '';
-
-  if (!files.length) {
-    return;
-  }
-
+  if (!files.length) return;
   await insertFiles(files, kind);
 }
 
+// ============================================================
+// File insertion
+// ============================================================
+
+/** 将一批文件依次上传并插入编辑器 */
 async function insertFiles(files: File[], forcedKind?: EdmUploadKind): Promise<void> {
-  if (!quill || props.readOnly) {
-    return;
-  }
+  if (!quill || props.readOnly) return;
 
   let insertIndex = quill.getSelection(true)?.index ?? Math.max(quill.getLength() - 1, 0);
 
   for (const file of files) {
     const kind = forcedKind || inferUploadKind(file);
-
     try {
       insertIndex = await uploadAndInsert(file, kind, insertIndex);
     } catch {
@@ -243,14 +270,24 @@ async function insertFiles(files: File[], forcedKind?: EdmUploadKind): Promise<v
   }
 }
 
+/** 根据 MIME 类型推断 EDM 资源类型 */
+function inferUploadKind(file: File): EdmUploadKind {
+  if (file.type.startsWith('image/')) return 'image';
+  if (file.type.startsWith('video/')) return 'video';
+  return 'file';
+}
+
+// ============================================================
+// Upload & embed
+// ============================================================
+
+/** 上传单个文件并根据返回的 edmId 构建嵌入元素 */
 async function uploadAndInsert(
   file: File,
   kind: EdmUploadKind,
   insertIndex: number,
 ): Promise<number> {
-  if (!quill) {
-    return insertIndex;
-  }
+  if (!quill) return insertIndex;
 
   errorMessage.value = '';
   uploadingKind.value = kind;
@@ -279,21 +316,29 @@ async function uploadAndInsert(
   }
 }
 
+/**
+ * 根据上传结果构建 `EdmEmbedValue`。
+ *
+ * 优先使用结果中已返回的 URL，
+ * 否则通过 `resolvePreviewUrl` / `resolveDownloadUrl` 动态解析。
+ * 文件类型不设独立预览 URL，直接使用下载地址。
+ */
 async function buildEmbedValue(
   file: File,
   kind: EdmUploadKind,
   result: EdmUploadResult,
 ): Promise<EdmEmbedValue> {
   const downloadUrl =
-    result.downloadUrl ||
-    result.url ||
-    (await resolveUrl(props.resolveDownloadUrl, result.edmId, kind, result));
+    result.downloadUrl
+    || result.url
+    || (await resolveUrl(props.resolveDownloadUrl, result.edmId, kind, result));
+
   const previewUrl =
     kind === 'file'
       ? downloadUrl
-      : result.previewUrl ||
-        result.url ||
-        (await resolveUrl(props.resolvePreviewUrl, result.edmId, kind, result));
+      : result.previewUrl
+        || result.url
+        || (await resolveUrl(props.resolvePreviewUrl, result.edmId, kind, result));
 
   return {
     edmId: result.edmId,
@@ -304,19 +349,44 @@ async function buildEmbedValue(
   };
 }
 
+/** 将 EdmUploadKind 映射到对应的 blot 名称 */
+function getBlotName(kind: EdmUploadKind): string {
+  if (kind === 'image') return 'edmImage';
+  if (kind === 'video') return 'edmVideo';
+  return 'edmFile';
+}
+
+// ============================================================
+// URL resolution
+// ============================================================
+
+/**
+ * 解析资源 URL。
+ *
+ * 优先使用使用者提供的 `resolver` 函数，否则回退到
+ * `/api/edm/{edmId}/download` 默认路径。
+ */
 async function resolveUrl(
   resolver: EdmUrlResolver | undefined,
   edmId: string,
   kind: EdmUploadKind,
   result: EdmUploadResult,
 ): Promise<string> {
-  if (resolver) {
-    return resolver(edmId, kind, result);
-  }
-
+  if (resolver) return resolver(edmId, kind, result);
   return `/api/edm/${encodeURIComponent(edmId)}/download`;
 }
 
+// ============================================================
+// Embed refresh (loaded content)
+// ============================================================
+
+/**
+ * 刷新编辑器中已有 EDM 嵌入元素的 URL。
+ *
+ * 在加载已保存的 HTML 内容后调用，根据元素的 `data-edm-id`
+ * 重新解析下载/预览地址，并更新对应 DOM 元素的 `src` / `href`。
+ * 图片/视频优先使用预览地址，文件直接使用下载地址。
+ */
 async function refreshEdmEmbeds(): Promise<void> {
   if (!quill) return;
 
@@ -345,48 +415,20 @@ async function refreshEdmEmbeds(): Promise<void> {
   );
 }
 
-function getBlotName(kind: EdmUploadKind): string {
-  if (kind === 'image') {
-    return 'edmImage';
-  }
-
-  if (kind === 'video') {
-    return 'edmVideo';
-  }
-
-  return 'edmFile';
-}
-
-function inferUploadKind(file: File): EdmUploadKind {
-  if (file.type.startsWith('image/')) {
-    return 'image';
-  }
-
-  if (file.type.startsWith('video/')) {
-    return 'video';
-  }
-
-  return 'file';
-}
+// ============================================================
+// Drag & drop, paste
+// ============================================================
 
 function handlePaste(event: ClipboardEvent): void {
   const files = Array.from(event.clipboardData?.files || []);
-
-  if (!files.length) {
-    return;
-  }
-
+  if (!files.length) return;
   event.preventDefault();
   void insertFiles(files);
 }
 
 function handleDrop(event: DragEvent): void {
   const files = Array.from(event.dataTransfer?.files || []);
-
-  if (!files.length) {
-    return;
-  }
-
+  if (!files.length) return;
   event.preventDefault();
   void insertFiles(files);
 }
@@ -395,12 +437,14 @@ function handleDragOver(event: DragEvent): void {
   const hasFile = Array.from(event.dataTransfer?.items || []).some(
     (item) => item.kind === 'file',
   );
-
-  if (hasFile) {
-    event.preventDefault();
-  }
+  if (hasFile) event.preventDefault();
 }
 
+// ============================================================
+// HTML sync
+// ============================================================
+
+/** 将编辑器 HTML 同步到 v-model 并触发 change 事件 */
 function syncHtmlFromEditor(): void {
   const html = getEditorHtml();
   lastHtml.value = html;
@@ -413,15 +457,12 @@ function getEditorHtml(): string {
 }
 
 function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return '上传失败';
+  return error instanceof Error ? error.message : '上传失败';
 }
 </script>
 
 <style scoped>
+/* ---- Container ---- */
 .rich-editor {
   position: relative;
   overflow: hidden;
@@ -447,6 +488,7 @@ function getErrorMessage(error: unknown): string {
   display: none;
 }
 
+/* ---- Uploading overlay ---- */
 .rich-editor__uploading {
   position: absolute;
   inset: 12px 12px auto auto;
@@ -472,6 +514,7 @@ function getErrorMessage(error: unknown): string {
   animation: rich-editor-spin 0.7s linear infinite;
 }
 
+/* ---- Error ---- */
 .rich-editor__error {
   margin: 0;
   padding: 10px 14px;
@@ -481,6 +524,7 @@ function getErrorMessage(error: unknown): string {
   font-size: 13px;
 }
 
+/* ---- Quill toolbar overrides ---- */
 :deep(.ql-toolbar.ql-snow) {
   border: 0;
   border-bottom: 1px solid #d7dee8;
@@ -492,6 +536,7 @@ function getErrorMessage(error: unknown): string {
   height: 18px;
 }
 
+/* ---- Quill editor overrides ---- */
 :deep(.ql-container.ql-snow) {
   border: 0;
   font-size: 15px;
@@ -510,6 +555,7 @@ function getErrorMessage(error: unknown): string {
   font-style: normal;
 }
 
+/* ---- EDM image embed ---- */
 :deep(.ql-edm-image) {
   display: block;
   max-width: 100%;
@@ -520,6 +566,7 @@ function getErrorMessage(error: unknown): string {
   background: #f7fafc;
 }
 
+/* ---- EDM video embed ---- */
 :deep(.ql-edm-video) {
   display: block;
   width: min(100%, 760px);
@@ -531,6 +578,7 @@ function getErrorMessage(error: unknown): string {
   background: #111827;
 }
 
+/* ---- EDM file embed ---- */
 :deep(.ql-edm-file) {
   display: inline-flex;
   max-width: 100%;

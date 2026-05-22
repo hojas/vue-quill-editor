@@ -1,21 +1,47 @@
 {
   "name": "vue-quill-editor-edm",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Vue 3 + Quill 2.0 rich text editor with EDM (image/video/file) upload and preview extensions.",
   "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "vue",
+    "quill",
+    "rich-text-editor",
+    "edm",
+    "image-upload",
+    "video-upload",
+    "file-upload",
+    "wysiwyg"
+  ],
+  "main": "./dist/vue-quill-editor-edm.cjs",
+  "module": "./dist/vue-quill-editor-edm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/vue-quill-editor-edm.js",
+      "require": "./dist/vue-quill-editor-edm.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "rm -rf dist && vue-tsc --project tsconfig.build.json && vite build",
     "preview": "vite preview --host 127.0.0.1"
   },
-  "dependencies": {
-    "quill": "2.0.3",
-    "vue": "^3.5.13"
+  "peerDependencies": {
+    "quill": "^2.0.0",
+    "vue": "^3.4.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
+    "quill": "2.0.3",
     "typescript": "~5.6.3",
     "vite": "^6.0.5",
+    "vue": "^3.5.13",
     "vue-tsc": "^2.2.0"
   }
 }
