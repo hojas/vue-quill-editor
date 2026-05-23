@@ -311,13 +311,18 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   function ensureTrailingParagraph(): void {
     if (!quill) return;
     const root = quill.root;
-    const lastChild = root.lastElementChild;
+    let lastChild = root.lastElementChild;
     if (!lastChild) return;
+
+    // Quill 可能将 block embed 包在 <p> 中，取最内层的 EDM 元素
+    if (lastChild.tagName === 'P') {
+      const inner = lastChild.lastElementChild;
+      if (inner) lastChild = inner;
+    }
 
     const edmTags = new Set(['EDM-IMAGE', 'EDM-VIDEO', 'EDM-FILE']);
     if (edmTags.has(lastChild.tagName)) {
-      // 在 EDM embed 后插入换行，Quill 渲染为 <p><br></p>
-      quill.insertText(quill.getLength() - 1, '\n', 'silent');
+      quill.insertText(quill.getLength() - 1, '\n', 'user');
     }
   }
 
@@ -336,7 +341,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
 
     // 如果 HTML 不以 <p> 结尾，且最后一个元素是 EDM embed，追加段落
     const trimmed = html.trimEnd();
-    if (!/<p[>\s]/.test(trimmed.slice(-100)) && /<\/edm-(image|video|file)>\s*$/.test(trimmed)) {
+    // Quill 可能将 block embed 包在 <p> 中，匹配两种结尾：</edm-file> 或 </edm-file></p>
+    if (/<\/edm-(?:image|video|file)>(?:<\/p>)?\s*$/.test(trimmed) && !/<p[>\s][\s\S]*<br[\s>]/.test(trimmed.slice(-200))) {
       return trimmed + '<p><br></p>';
     }
     return html;
