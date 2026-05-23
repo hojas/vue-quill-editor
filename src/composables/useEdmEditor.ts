@@ -240,7 +240,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     result: EdmUploadResult,
   ): Promise<string> {
     if (resolver) return resolver(edmId, kind, result);
-    return `/api/edm/${encodeURIComponent(edmId)}/download`;
+    const id = result.attachmentId ?? edmId;
+    return `/api/edm/${encodeURIComponent(String(id))}/download`;
   }
 
   // ---- embed refresh (loaded content) ----
@@ -254,7 +255,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
         const kind = container.getAttribute('data-edm-type') as EdmUploadKind;
         if (!edmId || !kind) return;
 
-        const dummyResult: EdmUploadResult = { edmId };
+        const attachmentIdRaw = container.getAttribute('data-attachment-id');
+        const dummyResult: EdmUploadResult = {
+          edmId,
+          attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined,
+        };
 
         if (kind === 'file') {
           const url = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);

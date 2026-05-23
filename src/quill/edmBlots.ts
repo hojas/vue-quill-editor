@@ -11,8 +11,9 @@ import type { EdmEmbedValue, EdmUploadKind } from '../types/edm';
  * 当使用者未提供 `resolvePreviewUrl` / `resolveDownloadUrl` 时，
  * 图片/视频/文件均通过此地址访问。
  */
-function defaultEdmDownloadUrl(edmId: string): string {
-  return `/api/edm/${encodeURIComponent(edmId)}/download`;
+function defaultEdmDownloadUrl(edmId: string, attachmentId?: number): string {
+  const id = attachmentId ?? edmId;
+  return `/api/edm/${encodeURIComponent(String(id))}/download`;
 }
 
 /**
@@ -48,7 +49,7 @@ function normalizeValue(value: EdmEmbedValue | string): EdmEmbedValue {
   return {
     edmId: value.edmId,
     attachmentId: value.attachmentId,
-    url: value.url || defaultEdmDownloadUrl(value.edmId),
+    url: value.url || defaultEdmDownloadUrl(value.edmId, value.attachmentId),
     name: value.name,
     mimeType: value.mimeType,
     size: value.size,
@@ -97,9 +98,8 @@ function setCommonAttributes(
 function readCommonValue(root: HTMLElement, urlAttribute: 'src' | 'href'): EdmEmbedValue {
   const target = findEdmTarget(root) || root;
   const edmId = target.getAttribute('data-edm-id') || root.getAttribute('data-edm-id') || '';
-  const fallbackUrl = edmId ? defaultEdmDownloadUrl(edmId) : '';
-
   const attachmentIdRaw = target.getAttribute('data-attachment-id') || root.getAttribute('data-attachment-id');
+  const fallbackUrl = edmId ? defaultEdmDownloadUrl(edmId, attachmentIdRaw ? Number(attachmentIdRaw) : undefined) : '';
 
   return {
     edmId,

@@ -43,7 +43,11 @@ async function refreshEmbeds(): Promise<void> {
       const kind = el.getAttribute('data-edm-type') as EdmUploadKind;
       if (!edmId || !kind) return;
 
-      const dummyResult: EdmUploadResult = { edmId };
+      const attachmentIdRaw = el.getAttribute('data-attachment-id');
+      const dummyResult: EdmUploadResult = {
+        edmId,
+        attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined,
+      };
 
       if (kind === 'file') {
         const url = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
@@ -67,7 +71,8 @@ async function resolveUrl(
   result: EdmUploadResult,
 ): Promise<string> {
   if (resolver) return resolver(edmId, kind, result);
-  return `/api/edm/${encodeURIComponent(edmId)}/download`;
+  const id = result.attachmentId ?? edmId;
+  return `/api/edm/${encodeURIComponent(String(id))}/download`;
 }
 </script>
 
