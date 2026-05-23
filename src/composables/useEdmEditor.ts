@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import Quill from 'quill';
 import { registerEdmBlots } from '../quill/edmBlots';
 import type {
+  EdmAttachment,
   EdmEmbedValue,
   EdmUploadErrorPayload,
   EdmUploadHandler,
@@ -29,6 +30,7 @@ export interface UseEdmEditorEmit {
   (event: 'upload-start', payload: { file: File; kind: EdmUploadKind }): void;
   (event: 'upload-success', payload: EdmUploadSuccessPayload): void;
   (event: 'upload-error', payload: EdmUploadErrorPayload): void;
+  (event: 'update:attachmentList', value: EdmAttachment[]): void;
 }
 
 const toolbarConfig = [
@@ -318,11 +320,31 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   }
 
   // ---- HTML sync ----
+  function extractAttachments(): EdmAttachment[] {
+    if (!quill) return [];
+    const els = quill.root.querySelectorAll<HTMLElement>('[data-edm-id]');
+    const seen = new Set<string>();
+    const list: EdmAttachment[] = [];
+    els.forEach((el) => {
+      const edmId = el.getAttribute('data-edm-id');
+      if (!edmId || seen.has(edmId)) return;
+      seen.add(edmId);
+      const raw = el.getAttribute('data-attachment-id');
+      list.push({
+        edmId,
+        attachmentId: raw ? Number(raw) : undefined,
+        kind: (el.getAttribute('data-edm-type') as EdmUploadKind) || 'file',
+      });
+    });
+    return list;
+  }
+
   function syncHtmlFromEditor(): void {
     const html = getEditorHtml();
     lastHtml.value = html;
     emit('update:modelValue', html);
     emit('change', html);
+    emit('update:attachmentList', extractAttachments());
   }
 
   function getEditorHtml(): string {

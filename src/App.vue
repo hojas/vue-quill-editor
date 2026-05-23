@@ -10,6 +10,7 @@
         <h2 class="app-pane__title">编辑</h2>
         <RichTextEditor
           v-model="content"
+          v-model:attachment-list="attachments"
           :upload="uploadEdm"
           :resolve-preview-url="resolveEdmUrl"
           :resolve-download-url="resolveEdmUrl"
@@ -39,9 +40,10 @@ import { ref } from 'vue';
 import RichTextEditor from './components/RichTextEditor.vue';
 import EdmContentViewer from './components/EdmContentViewer.vue';
 import { resolveMockEdmUrl, uploadToMockEdm } from './services/mockEdmApi';
-import type { EdmUploadKind } from './types/edm';
+import type { EdmAttachment, EdmUploadKind } from './types/edm';
 
 const content = ref('<p>欢迎编辑 EDM 内容。</p>');
+const attachments = ref<EdmAttachment[]>([]);
 
 async function uploadEdm(file: File, kind: EdmUploadKind) {
   return uploadToMockEdm(file, kind);

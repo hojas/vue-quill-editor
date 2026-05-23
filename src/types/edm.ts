@@ -101,3 +101,10 @@ export interface EdmUploadSuccessPayload extends EdmUploadEventPayload {
 export interface EdmUploadErrorPayload extends EdmUploadEventPayload {
   error: unknown;
 }
+
+/** 编辑器内容中 EDM 附件的 ID 摘要 */
+export interface EdmAttachment {
+  attachmentId?: number;
+  edmId: string;
+  kind: EdmUploadKind;
+}

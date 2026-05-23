@@ -24,6 +24,7 @@
 import 'quill/dist/quill.snow.css';
 
 import type {
+  EdmAttachment,
   EdmUploadErrorPayload,
   EdmUploadHandler,
   EdmUploadKind,
@@ -46,6 +47,7 @@ const props = withDefaults(
     imageAccept?: string;
     videoAccept?: string;
     fileAccept?: string;
+    attachmentList?: EdmAttachment[];
   }>(),
   {
     modelValue: '',
@@ -54,11 +56,13 @@ const props = withDefaults(
     imageAccept: 'image/*',
     videoAccept: 'video/*',
     fileAccept: '',
+    attachmentList: () => [],
   },
 );
 
 const emit = defineEmits<{
   'update:modelValue': [value: string];
+  'update:attachmentList': [value: EdmAttachment[]];
   change: [value: string];
   'upload-start': [{ file: File; kind: EdmUploadKind }];
   'upload-success': [EdmUploadSuccessPayload];
