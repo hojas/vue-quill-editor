@@ -47,7 +47,15 @@ async function uploadEdm(file: File, kind: EdmUploadKind) {
   return uploadToMockEdm(file, kind);
 }
 
-function resolveEdmUrl(attachmentId: string) {
+/**
+ * 通过 attachmentId 下载图片/视频二进制内容，返回 blob URL 供预览。
+ *
+ * 真实环境下的实现模式：
+ * 1. fetch(`/api/edm/${attachmentId}/download`)
+ * 2. const blob = await res.blob()
+ * 3. return URL.createObjectURL(blob)
+ */
+async function resolveEdmUrl(attachmentId: string): Promise<string> {
   return resolveMockEdmUrl(attachmentId);
 }
 </script>
