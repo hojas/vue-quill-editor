@@ -239,7 +239,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     kind: EdmUploadKind,
     result: EdmUploadResult,
   ): Promise<string> {
-    if (resolver) return resolver(edmId, kind, result);
+    if (resolver) {
+      const id = result.attachmentId != null ? String(result.attachmentId) : edmId;
+      return resolver(id, kind, result);
+    }
     const id = result.attachmentId ?? edmId;
     return `/api/edm/${encodeURIComponent(String(id))}/download`;
   }

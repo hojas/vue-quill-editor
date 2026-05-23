@@ -24,14 +24,16 @@ export async function uploadToMockEdm(
   const edmId = createEdmId(kind);
   const objectUrl = URL.createObjectURL(file);
 
-  edmAssets.set(edmId, {
+  const attachmentId = Date.now();
+  const asset = {
     file,
     kind,
     objectUrl,
     uploadedAt: new Date().toISOString(),
-  });
+  };
 
-  const attachmentId = Date.now();
+  edmAssets.set(edmId, asset);
+  edmAssets.set(String(attachmentId), asset);
 
   return {
     edmId,

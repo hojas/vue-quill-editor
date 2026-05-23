@@ -47,8 +47,8 @@ async function uploadEdm(file: File, kind: EdmUploadKind) {
   return uploadToMockEdm(file, kind);
 }
 
-function resolveEdmUrl(edmId: string) {
-  return resolveMockEdmUrl(edmId);
+function resolveEdmUrl(attachmentId: string) {
+  return resolveMockEdmUrl(attachmentId);
 }
 </script>
 
