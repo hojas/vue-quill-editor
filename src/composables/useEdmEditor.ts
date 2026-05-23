@@ -91,6 +91,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     if (props.modelValue) {
       quill.clipboard.dangerouslyPasteHTML(props.modelValue, 'silent');
       await refreshEdmEmbeds();
+      await new Promise((r) => requestAnimationFrame(r));
       ensureTrailingParagraph();
       syncHtmlFromEditor();
     } else {
@@ -117,6 +118,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       if (nextValue) {
         quill.clipboard.dangerouslyPasteHTML(nextValue, 'silent');
         await refreshEdmEmbeds();
+        await new Promise((r) => requestAnimationFrame(r));
         ensureTrailingParagraph();
       }
       const nextIndex = Math.min(selection?.index || 0, quill.getLength() - 1);
@@ -311,20 +313,21 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   function ensureTrailingParagraph(): void {
     if (!quill) return;
     const root = quill.root;
-    let lastChild = root.lastElementChild;
+    const lastChild = root.lastElementChild;
     if (!lastChild) return;
 
-    // Quill 可能将 block embed 包在 <p> 中，取最内层的 EDM 元素
-    if (lastChild.tagName === 'P') {
-      const inner = lastChild.lastElementChild;
-      if (inner) lastChild = inner;
+    let edmEl = lastChild;
+    if (edmEl.tagName === 'P') {
+      const inner = edmEl.lastElementChild;
+      if (inner) edmEl = inner;
     }
 
     const edmTags = new Set(['EDM-IMAGE', 'EDM-VIDEO', 'EDM-FILE']);
-    if (edmTags.has(lastChild.tagName)) {
-      // 插入两个换行 — Quill 可能把单个末尾空段落当作结构换行符合并掉
-      quill.insertText(quill.getLength() - 1, '\n\n', 'user');
-    }
+    if (!edmTags.has(edmEl.tagName)) return;
+
+    // 选中末尾并插入换行，确保在 EDM embed 后创建可见段落
+    quill.setSelection(quill.getLength(), 0, 'silent');
+    quill.insertText(quill.getLength(), '\n', 'user');
   }
 
   // ---- HTML sync ----
