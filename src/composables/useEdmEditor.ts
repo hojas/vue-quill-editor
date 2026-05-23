@@ -91,10 +91,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     quill.root.addEventListener('dragover', handleDragOver);
 
     if (props.modelValue) {
+      const resolvedHtml = await resolveHtmlEmbeds(props.modelValue);
       quill.off('text-change', syncHtmlFromEditor);
-      quill.clipboard.dangerouslyPasteHTML(props.modelValue, 'silent');
+      quill.clipboard.dangerouslyPasteHTML(resolvedHtml, 'silent');
       quill.on('text-change', syncHtmlFromEditor);
-      await refreshEdmEmbeds();
       ensureTrailingParagraph();
       syncHtmlFromEditor();
     } else {
@@ -119,10 +119,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       const selection = quill.getSelection();
       quill.setText('', 'silent');
       if (nextValue) {
+        const resolvedHtml = await resolveHtmlEmbeds(nextValue);
         quill.off('text-change', syncHtmlFromEditor);
-        quill.clipboard.dangerouslyPasteHTML(nextValue, 'silent');
+        quill.clipboard.dangerouslyPasteHTML(resolvedHtml, 'silent');
         quill.on('text-change', syncHtmlFromEditor);
-        await refreshEdmEmbeds();
         ensureTrailingParagraph();
       }
       const nextIndex = Math.min(selection?.index || 0, quill.getLength() - 1);
@@ -256,17 +256,24 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   }
 
   // ---- embed refresh (loaded content) ----
-  async function refreshEdmEmbeds(): Promise<void> {
-    if (!quill) return;
-    const containers = quill.root.querySelectorAll<HTMLElement>('[data-edm-type]');
+  /**
+   * 在 HTML 字符串中预解析所有 EDM 嵌入元素的 URL。
+   *
+   * 先解析再 paste，避免浏览器先看到未解析的 `/api/edm/...` URL 触发无意义的请求，
+   * 也避免 paste 后再操作 DOM（refreshEdmEmbeds）导致二次下载。
+   */
+  async function resolveHtmlEmbeds(html: string): Promise<string> {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const containers = doc.querySelectorAll<HTMLElement>('[data-edm-type]');
 
     await Promise.allSettled(
-      Array.from(containers).map(async (container) => {
-        const edmId = container.getAttribute('data-edm-id');
-        const kind = container.getAttribute('data-edm-type') as EdmUploadKind;
+      Array.from(containers).map(async (el) => {
+        const edmId = el.getAttribute('data-edm-id');
+        const kind = el.getAttribute('data-edm-type') as EdmUploadKind;
         if (!edmId || !kind) return;
 
-        const attachmentIdRaw = container.getAttribute('data-attachment-id');
+        const attachmentIdRaw = el.getAttribute('data-attachment-id');
         const dummyResult: EdmUploadResult = {
           edmId,
           attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined,
@@ -274,16 +281,18 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
 
         if (kind === 'file') {
           const url = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
-          const link = container.querySelector('a');
+          const link = el.querySelector('a');
           if (link) link.setAttribute('href', url);
         } else {
           const previewUrl = await resolveUrl(props.resolvePreviewUrl, edmId, kind, dummyResult);
           const url = previewUrl || (await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult));
-          const media = container.querySelector('img, video');
+          const media = el.querySelector('img, video');
           if (media) media.setAttribute('src', url);
         }
       }),
     );
+
+    return doc.body.innerHTML;
   }
 
   // ---- drag & drop, paste ----

@@ -3,76 +3,18 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
-import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../types/edm';
+import { ref } from 'vue';
+import type { EdmUrlResolver } from '../types/edm';
 
-const props = withDefaults(
-  defineProps<{
-    /** 富文本编辑器生成的 HTML 内容 */
-    content: string;
-    /**
-     * 预览 URL 解析函数（图片/视频）。
-     * 用于根据 `data-edm-id` 动态解析预览地址。
-     */
-    resolvePreviewUrl?: EdmUrlResolver;
-    /**
-     * 下载 URL 解析函数。
-     * 用于根据 `data-edm-id` 动态解析下载地址。
-     * 文件类型直接使用下载地址。
-     */
-    resolveDownloadUrl?: EdmUrlResolver;
-  }>(),
-  { content: '' },
-);
+defineProps<{
+  content: string;
+  resolvePreviewUrl?: EdmUrlResolver;
+  resolveDownloadUrl?: EdmUrlResolver;
+}>();
 
 const containerRef = ref<HTMLDivElement | null>(null);
 
-onMounted(() => refreshEmbeds());
-watch(() => props.content, () => refreshEmbeds());
-
-/** 渲染 HTML 后扫描 EDM 嵌入元素并刷新其 URL */
-async function refreshEmbeds(): Promise<void> {
-  await new Promise((resolve) => requestAnimationFrame(resolve));
-  if (!containerRef.value) return;
-
-  const containers = containerRef.value.querySelectorAll<HTMLElement>('[data-edm-type]');
-
-  await Promise.allSettled(
-    Array.from(containers).map(async (el) => {
-      const edmId = el.getAttribute('data-edm-id');
-      const kind = el.getAttribute('data-edm-type') as EdmUploadKind;
-      if (!edmId || !kind) return;
-
-      if (kind === 'file') {
-        const link = el.querySelector('a');
-        // 已解析过的 URL（如 blob:）不再重复请求
-        if (link && link.getAttribute('href') && !link.getAttribute('href')!.startsWith('/api/edm/')) return;
-      } else {
-        const media = el.querySelector('img, video');
-        if (media && media.getAttribute('src') && !media.getAttribute('src')!.startsWith('/api/edm/')) return;
-      }
-
-      const attachmentIdRaw = el.getAttribute('data-attachment-id');
-      const dummyResult: EdmUploadResult = {
-        edmId,
-        attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined,
-      };
-
-      if (kind === 'file') {
-        const url = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
-        const link = el.querySelector('a');
-        if (link) link.setAttribute('href', url);
-      } else {
-        const previewUrl = await resolveUrl(props.resolvePreviewUrl, edmId, kind, dummyResult);
-        const url = previewUrl || (await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult));
-        const media = el.querySelector('img, video');
-        if (media) media.setAttribute('src', url);
-      }
-    }),
-  );
-}
-
-/** 拦截文件嵌入元素上的点击，通过 fetch + blob 触发浏览器下载 */
+/** 拦截文件点击，fetch 二进制内容后触发浏览器下载 */
 async function handleFileDownload(event: MouseEvent): Promise<void> {
   const target = event.target as HTMLElement;
   const fileEl = target.closest<HTMLElement>('[data-edm-type="file"]');
@@ -82,9 +24,9 @@ async function handleFileDownload(event: MouseEvent): Promise<void> {
   if (!link) return;
 
   event.preventDefault();
+  event.stopPropagation();
   const url = link.getAttribute('href');
   const fileName = fileEl.getAttribute('data-file-name') || 'download';
-
   if (!url) return;
 
   try {
@@ -101,20 +43,6 @@ async function handleFileDownload(event: MouseEvent): Promise<void> {
   } catch {
     window.open(url, '_blank');
   }
-}
-
-async function resolveUrl(
-  resolver: EdmUrlResolver | undefined,
-  edmId: string,
-  kind: EdmUploadKind,
-  result: EdmUploadResult,
-): Promise<string> {
-  if (resolver) {
-    const attachmentId = result.attachmentId != null ? String(result.attachmentId) : '';
-    return resolver(attachmentId, edmId, kind, result);
-  }
-  const id = result.attachmentId ?? edmId;
-  return `/api/edm/${encodeURIComponent(String(id))}/download`;
 }
 </script>
 
