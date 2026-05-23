@@ -310,21 +310,14 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
    */
   function ensureTrailingParagraph(): void {
     if (!quill) return;
-    const length = quill.getLength();
-    if (length <= 1) return;
+    const root = quill.root;
+    const lastChild = root.lastElementChild;
+    if (!lastChild) return;
 
-    // Quill 末尾始终有一个保留换行符，实际内容在 0..length-2
-    const lastContentIndex = length - 2;
-    if (lastContentIndex < 0) return;
-
-    const [leaf] = quill.getLeaf(lastContentIndex);
-    if (!leaf) return;
-
-    const blot = leaf as { statics?: { blotName?: string } };
-    const blotName = blot.statics?.blotName;
-    if (blotName === 'edmImage' || blotName === 'edmVideo' || blotName === 'edmFile') {
-      // 在 EDM embed 后插入一个换行，Quill 会自动生成 `<p><br></p>`
-      quill.insertText(length - 1, '\n', 'silent');
+    const edmTags = new Set(['EDM-IMAGE', 'EDM-VIDEO', 'EDM-FILE']);
+    if (edmTags.has(lastChild.tagName)) {
+      // 在 EDM embed 后插入换行，Quill 渲染为 <p><br></p>
+      quill.insertText(quill.getLength() - 1, '\n', 'silent');
     }
   }
 
@@ -336,8 +329,17 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     emit('change', html);
   }
 
+  /** 返回编辑器 HTML，末尾如果是 EDM embed 则补齐一个段落 */
   function getEditorHtml(): string {
-    return quill?.root.innerHTML || '';
+    const html = quill?.root.innerHTML || '';
+    if (!html) return html;
+
+    // 如果 HTML 不以 <p> 结尾，且最后一个元素是 EDM embed，追加段落
+    const trimmed = html.trimEnd();
+    if (!/<p[>\s]/.test(trimmed.slice(-100)) && /<\/edm-(image|video|file)>\s*$/.test(trimmed)) {
+      return trimmed + '<p><br></p>';
+    }
+    return html;
   }
 
   function getErrorMessage(error: unknown): string {
