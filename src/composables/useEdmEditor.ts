@@ -91,6 +91,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     if (props.modelValue) {
       quill.clipboard.dangerouslyPasteHTML(props.modelValue, 'silent');
       await refreshEdmEmbeds();
+      ensureTrailingParagraph();
       syncHtmlFromEditor();
     } else {
       lastHtml.value = getEditorHtml();
@@ -116,6 +117,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       if (nextValue) {
         quill.clipboard.dangerouslyPasteHTML(nextValue, 'silent');
         await refreshEdmEmbeds();
+        ensureTrailingParagraph();
       }
       const nextIndex = Math.min(selection?.index || 0, quill.getLength() - 1);
       quill.setSelection(nextIndex, selection?.length || 0, 'silent');
@@ -299,6 +301,31 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       (item) => item.kind === 'file',
     );
     if (hasFile) event.preventDefault();
+  }
+
+  /**
+   * 确保最后一个 EDM 嵌入元素之后有段落，
+   * 防止保存后再打开时 trailing `<p><br></p>` 被 Quill 裁剪，
+   * 导致光标无法定位到文件链接后方进行删除。
+   */
+  function ensureTrailingParagraph(): void {
+    if (!quill) return;
+    const length = quill.getLength();
+    if (length <= 1) return;
+
+    // Quill 末尾始终有一个保留换行符，实际内容在 0..length-2
+    const lastContentIndex = length - 2;
+    if (lastContentIndex < 0) return;
+
+    const [leaf] = quill.getLeaf(lastContentIndex);
+    if (!leaf) return;
+
+    const blot = leaf as { statics?: { blotName?: string } };
+    const blotName = blot.statics?.blotName;
+    if (blotName === 'edmImage' || blotName === 'edmVideo' || blotName === 'edmFile') {
+      // 在 EDM embed 后插入一个换行，Quill 会自动生成 `<p><br></p>`
+      quill.insertText(length - 1, '\n', 'silent');
+    }
   }
 
   // ---- HTML sync ----
