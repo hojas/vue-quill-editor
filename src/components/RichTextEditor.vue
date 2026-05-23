@@ -9,8 +9,6 @@
       </div>
     </div>
 
-    <p v-if="errorMessage" class="rich-editor__error">{{ errorMessage }}</p>
-
     <input ref="imageInputRef" class="rich-editor__input" type="file" :accept="imageAccept" multiple
       @change="handleFileInputChange('image', $event)" />
     <input ref="videoInputRef" class="rich-editor__input" type="file" :accept="videoAccept" multiple
@@ -74,7 +72,6 @@ const {
   imageInputRef,
   videoInputRef,
   fileInputRef,
-  errorMessage,
   isBusy,
   uploadingLabel,
   handleFileInputChange,
@@ -132,16 +129,6 @@ const {
   border-top-color: #176c56;
   border-radius: 50%;
   animation: rich-editor-spin 0.7s linear infinite;
-}
-
-/* ---- Error ---- */
-.rich-editor__error {
-  margin: 0;
-  padding: 10px 14px;
-  border-top: 1px solid #f2c6c6;
-  background: #fff5f5;
-  color: #b42318;
-  font-size: 13px;
 }
 
 /* ---- Quill toolbar overrides ---- */
