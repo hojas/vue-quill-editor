@@ -204,6 +204,25 @@ export class EdmFileBlot extends BlockEmbed {
     link.setAttribute('rel', 'noopener noreferrer');
     link.setAttribute('download', fileName);
     link.textContent = fileName;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const url = link.getAttribute('href');
+      if (!url) return;
+      fetch(url)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(blobUrl);
+        })
+        .catch(() => window.open(url, '_blank'));
+    });
     setCommonAttributes(link, normalizedValue, 'file');
     node.append(link);
 
