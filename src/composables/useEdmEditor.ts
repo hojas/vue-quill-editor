@@ -87,6 +87,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     quill.root.addEventListener('paste', handlePaste);
     quill.root.addEventListener('drop', handleDrop);
     quill.root.addEventListener('dragover', handleDragOver);
+    quill.root.addEventListener('click', handleFileDownload);
 
     if (props.modelValue) {
       quill.clipboard.dangerouslyPasteHTML(props.modelValue, 'silent');
@@ -103,6 +104,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     quill.root.removeEventListener('paste', handlePaste);
     quill.root.removeEventListener('drop', handleDrop);
     quill.root.removeEventListener('dragover', handleDragOver);
+    quill.root.removeEventListener('click', handleFileDownload);
     quill = null;
   });
 
@@ -299,6 +301,37 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       (item) => item.kind === 'file',
     );
     if (hasFile) event.preventDefault();
+  }
+
+  /** 拦截文件嵌入元素上的点击，通过 fetch + blob 触发浏览器下载 */
+  async function handleFileDownload(event: MouseEvent): Promise<void> {
+    const target = event.target as HTMLElement;
+    const fileEl = target.closest<HTMLElement>('[data-edm-type="file"]');
+    if (!fileEl) return;
+
+    const link = fileEl.querySelector('a');
+    if (!link) return;
+
+    event.preventDefault();
+    const url = link.getAttribute('href');
+    const fileName = fileEl.getAttribute('data-file-name') || 'download';
+
+    if (!url) return;
+
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, '_blank');
+    }
   }
 
   // ---- HTML sync ----

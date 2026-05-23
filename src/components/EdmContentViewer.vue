@@ -1,5 +1,5 @@
 <template>
-  <div ref="containerRef" class="edm-content" v-html="content"></div>
+  <div ref="containerRef" class="edm-content" v-html="content" @click="handleFileDownload"></div>
 </template>
 
 <script setup lang="ts">
@@ -62,6 +62,37 @@ async function refreshEmbeds(): Promise<void> {
       }
     }),
   );
+}
+
+/** 拦截文件嵌入元素上的点击，通过 fetch + blob 触发浏览器下载 */
+async function handleFileDownload(event: MouseEvent): Promise<void> {
+  const target = event.target as HTMLElement;
+  const fileEl = target.closest<HTMLElement>('[data-edm-type="file"]');
+  if (!fileEl) return;
+
+  const link = fileEl.querySelector('a');
+  if (!link) return;
+
+  event.preventDefault();
+  const url = link.getAttribute('href');
+  const fileName = fileEl.getAttribute('data-file-name') || 'download';
+
+  if (!url) return;
+
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  } catch {
+    window.open(url, '_blank');
+  }
 }
 
 async function resolveUrl(

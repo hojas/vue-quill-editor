@@ -201,7 +201,6 @@ export class EdmFileBlot extends BlockEmbed {
 
     setCommonAttributes(node, normalizedValue, 'file');
     link.setAttribute('href', sanitizeResourceUrl(normalizedValue.url));
-    link.setAttribute('target', '_blank');
     link.setAttribute('rel', 'noopener noreferrer');
     link.setAttribute('download', fileName);
     link.textContent = fileName;
