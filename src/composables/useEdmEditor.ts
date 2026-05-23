@@ -322,7 +322,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
 
     const edmTags = new Set(['EDM-IMAGE', 'EDM-VIDEO', 'EDM-FILE']);
     if (edmTags.has(lastChild.tagName)) {
-      quill.insertText(quill.getLength() - 1, '\n', 'user');
+      // 插入两个换行 — Quill 可能把单个末尾空段落当作结构换行符合并掉
+      quill.insertText(quill.getLength() - 1, '\n\n', 'user');
     }
   }
 
@@ -334,18 +335,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     emit('change', html);
   }
 
-  /** 返回编辑器 HTML，末尾如果是 EDM embed 则补齐一个段落 */
   function getEditorHtml(): string {
-    const html = quill?.root.innerHTML || '';
-    if (!html) return html;
-
-    // 如果 HTML 不以 <p> 结尾，且最后一个元素是 EDM embed，追加段落
-    const trimmed = html.trimEnd();
-    // Quill 可能将 block embed 包在 <p> 中，匹配两种结尾：</edm-file> 或 </edm-file></p>
-    if (/<\/edm-(?:image|video|file)>(?:<\/p>)?\s*$/.test(trimmed) && !/<p[>\s][\s\S]*<br[\s>]/.test(trimmed.slice(-200))) {
-      return trimmed + '<p><br></p>';
-    }
-    return html;
+    return quill?.root.innerHTML || '';
   }
 
   function getErrorMessage(error: unknown): string {
