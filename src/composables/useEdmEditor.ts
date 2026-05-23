@@ -314,7 +314,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
    */
   function ensureTrailingParagraph(): void {
     if (!quill) return;
-    quill.insertText(quill.getLength(), '\n', 'user');
+    quill.insertText(quill.getLength(), '\n', 'api');
   }
 
   // ---- HTML sync ----
@@ -326,7 +326,13 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   }
 
   function getEditorHtml(): string {
-    return quill?.root.innerHTML || '';
+    const html = quill?.root.innerHTML || '';
+    // 末尾如果是 EDM embed，多补一个 <p><br></p>，
+    // 防止保存后重新加载时唯一一个末尾段落被 Quill 当结构换行符合并。
+    if (/<\/edm-(?:image|video|file)>(?:<\/p>)?\s*$/.test(html.trimEnd())) {
+      return html + '<p><br></p>';
+    }
+    return html;
   }
 
   function getErrorMessage(error: unknown): string {
