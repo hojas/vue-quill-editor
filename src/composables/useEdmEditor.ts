@@ -87,7 +87,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     quill.root.addEventListener('paste', handlePaste);
     quill.root.addEventListener('drop', handleDrop);
     quill.root.addEventListener('dragover', handleDragOver);
-    quill.root.addEventListener('click', handleFileDownload);
+    quill.root.addEventListener('click', handleFileDownload, true);
 
     if (props.modelValue) {
       quill.clipboard.dangerouslyPasteHTML(props.modelValue, 'silent');
@@ -104,7 +104,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     quill.root.removeEventListener('paste', handlePaste);
     quill.root.removeEventListener('drop', handleDrop);
     quill.root.removeEventListener('dragover', handleDragOver);
-    quill.root.removeEventListener('click', handleFileDownload);
+    quill.root.removeEventListener('click', handleFileDownload, true);
     quill = null;
   });
 
@@ -313,6 +313,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     if (!link) return;
 
     event.preventDefault();
+    event.stopPropagation();
     const url = link.getAttribute('href');
     const fileName = fileEl.getAttribute('data-file-name') || 'download';
 
