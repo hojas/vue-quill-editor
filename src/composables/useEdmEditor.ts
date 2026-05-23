@@ -277,9 +277,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
           const link = container.querySelector('a');
           if (link) link.setAttribute('href', url);
         } else {
-          const downloadUrl = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
           const previewUrl = await resolveUrl(props.resolvePreviewUrl, edmId, kind, dummyResult);
-          const url = previewUrl || downloadUrl;
+          const url = previewUrl || (await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult));
           const media = container.querySelector('img, video');
           if (media) media.setAttribute('src', url);
         }
