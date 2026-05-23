@@ -43,6 +43,15 @@ async function refreshEmbeds(): Promise<void> {
       const kind = el.getAttribute('data-edm-type') as EdmUploadKind;
       if (!edmId || !kind) return;
 
+      if (kind === 'file') {
+        const link = el.querySelector('a');
+        // 已解析过的 URL（如 blob:）不再重复请求
+        if (link && link.getAttribute('href') && !link.getAttribute('href')!.startsWith('/api/edm/')) return;
+      } else {
+        const media = el.querySelector('img, video');
+        if (media && media.getAttribute('src') && !media.getAttribute('src')!.startsWith('/api/edm/')) return;
+      }
+
       const attachmentIdRaw = el.getAttribute('data-attachment-id');
       const dummyResult: EdmUploadResult = {
         edmId,
