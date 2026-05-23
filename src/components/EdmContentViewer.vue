@@ -3,16 +3,72 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import type { EdmUrlResolver } from '../types/edm';
+import { nextTick, onMounted, ref, watch } from 'vue';
+import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../types/edm';
 
-defineProps<{
+const props = defineProps<{
   content: string;
   resolvePreviewUrl?: EdmUrlResolver;
   resolveDownloadUrl?: EdmUrlResolver;
 }>();
 
 const containerRef = ref<HTMLDivElement | null>(null);
+
+onMounted(() => refreshEmbeds());
+watch(() => props.content, () => nextTick(refreshEmbeds));
+
+/** 只刷新 src/href 为空或默认 /api/edm/... 格式的嵌入元素 */
+async function refreshEmbeds(): Promise<void> {
+  if (!containerRef.value) return;
+
+  const containers = containerRef.value.querySelectorAll<HTMLElement>('[data-edm-type]');
+
+  await Promise.allSettled(
+    Array.from(containers).map(async (el) => {
+      const edmId = el.getAttribute('data-edm-id');
+      const kind = el.getAttribute('data-edm-type') as EdmUploadKind;
+      if (!edmId || !kind) return;
+
+      const attachmentIdRaw = el.getAttribute('data-attachment-id');
+      const dummyResult: EdmUploadResult = {
+        edmId,
+        attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined,
+      };
+
+      if (kind === 'file') {
+        const link = el.querySelector('a');
+        if (link && link.getAttribute('href') && !isUnresolvedUrl(link.getAttribute('href')!)) return;
+        const url = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult, 'download');
+        if (link) link.setAttribute('href', url);
+      } else {
+        const media = el.querySelector('img, video');
+        if (media && media.getAttribute('src') && !isUnresolvedUrl(media.getAttribute('src')!)) return;
+        const previewUrl = await resolveUrl(props.resolvePreviewUrl, edmId, kind, dummyResult, 'preview');
+        const url = previewUrl || (await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult, 'download'));
+        if (media) media.setAttribute('src', url);
+      }
+    }),
+  );
+}
+
+function isUnresolvedUrl(url: string): boolean {
+  return url.startsWith('/api/edm/');
+}
+
+async function resolveUrl(
+  resolver: EdmUrlResolver | undefined,
+  edmId: string,
+  kind: EdmUploadKind,
+  result: EdmUploadResult,
+  action: 'preview' | 'download',
+): Promise<string> {
+  if (resolver) {
+    const attachmentId = result.attachmentId != null ? String(result.attachmentId) : '';
+    return resolver(attachmentId, edmId, kind, result);
+  }
+  const id = result.attachmentId ?? edmId;
+  return `/api/edm/${encodeURIComponent(String(id))}/${action}`;
+}
 
 /** 拦截文件点击，fetch 二进制内容后触发浏览器下载 */
 async function handleFileDownload(event: MouseEvent): Promise<void> {
