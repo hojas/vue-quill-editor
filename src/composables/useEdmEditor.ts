@@ -242,8 +242,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     result: EdmUploadResult,
   ): Promise<string> {
     if (resolver) {
-      const id = result.attachmentId != null ? String(result.attachmentId) : edmId;
-      return resolver(id, kind, result);
+      const attachmentId = result.attachmentId != null ? String(result.attachmentId) : '';
+      return resolver(attachmentId, edmId, kind, result);
     }
     const id = result.attachmentId ?? edmId;
     return `/api/edm/${encodeURIComponent(String(id))}/download`;

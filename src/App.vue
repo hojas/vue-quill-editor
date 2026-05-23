@@ -55,8 +55,8 @@ async function uploadEdm(file: File, kind: EdmUploadKind) {
  * 2. const blob = await res.blob()
  * 3. return URL.createObjectURL(blob)
  */
-async function resolveEdmUrl(attachmentId: string): Promise<string> {
-  return resolveMockEdmUrl(attachmentId);
+async function resolveEdmUrl(attachmentId: string, edmId: string): Promise<string> {
+  return resolveMockEdmUrl(attachmentId || edmId);
 }
 </script>
 

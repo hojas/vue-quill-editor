@@ -72,14 +72,15 @@ export type EdmUploadHandler = (
  * URL 解析函数签名。
  *
  * 当 `EdmUploadResult` 中未提供 `previewUrl` / `downloadUrl` 时，
- * 组件通过此函数根据 `edmId` 动态解析 URL。
+ * 组件通过此函数根据 `attachmentId` 和 `edmId` 动态解析 URL。
  *
- * @param edmId   - EDM 资源 ID
- * @param kind    - 资源类型
- * @param result  - 上传结果（可能仅含 `edmId`）
- * @returns 解析后的 URL 字符串
+ * @param attachmentId - 数字附件 ID（转为字符串），可能为空字符串
+ * @param edmId        - EDM 资源 ID
+ * @param kind         - 资源类型
+ * @param result       - 上传结果（可能仅含 `edmId`）
  */
 export type EdmUrlResolver = (
+  attachmentId: string,
   edmId: string,
   kind: EdmUploadKind,
   result?: EdmUploadResult,
