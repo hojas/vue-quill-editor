@@ -91,7 +91,6 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     if (props.modelValue) {
       quill.clipboard.dangerouslyPasteHTML(props.modelValue, 'silent');
       await refreshEdmEmbeds();
-      await new Promise((r) => requestAnimationFrame(r));
       ensureTrailingParagraph();
       syncHtmlFromEditor();
     } else {
@@ -118,7 +117,6 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       if (nextValue) {
         quill.clipboard.dangerouslyPasteHTML(nextValue, 'silent');
         await refreshEdmEmbeds();
-        await new Promise((r) => requestAnimationFrame(r));
         ensureTrailingParagraph();
       }
       const nextIndex = Math.min(selection?.index || 0, quill.getLength() - 1);
@@ -310,23 +308,12 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
    * 防止保存后再打开时 trailing `<p><br></p>` 被 Quill 裁剪，
    * 导致光标无法定位到文件链接后方进行删除。
    */
+  /**
+   * Quill 加载 HTML 时可能将末尾的空 `<p><br></p>` 当作结构换行符合并。
+   * 无脑在末尾补一个 `\n`，确保始终有可见段落，使 EDM embed 后方可以定位光标删除。
+   */
   function ensureTrailingParagraph(): void {
     if (!quill) return;
-    const root = quill.root;
-    const lastChild = root.lastElementChild;
-    if (!lastChild) return;
-
-    let edmEl = lastChild;
-    if (edmEl.tagName === 'P') {
-      const inner = edmEl.lastElementChild;
-      if (inner) edmEl = inner;
-    }
-
-    const edmTags = new Set(['EDM-IMAGE', 'EDM-VIDEO', 'EDM-FILE']);
-    if (!edmTags.has(edmEl.tagName)) return;
-
-    // 选中末尾并插入换行，确保在 EDM embed 后创建可见段落
-    quill.setSelection(quill.getLength(), 0, 'silent');
     quill.insertText(quill.getLength(), '\n', 'user');
   }
 
