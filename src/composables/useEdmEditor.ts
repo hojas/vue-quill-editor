@@ -91,7 +91,9 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     quill.root.addEventListener('dragover', handleDragOver);
 
     if (props.modelValue) {
+      quill.off('text-change', syncHtmlFromEditor);
       quill.clipboard.dangerouslyPasteHTML(props.modelValue, 'silent');
+      quill.on('text-change', syncHtmlFromEditor);
       await refreshEdmEmbeds();
       ensureTrailingParagraph();
       syncHtmlFromEditor();
@@ -117,7 +119,9 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       const selection = quill.getSelection();
       quill.setText('', 'silent');
       if (nextValue) {
+        quill.off('text-change', syncHtmlFromEditor);
         quill.clipboard.dangerouslyPasteHTML(nextValue, 'silent');
+        quill.on('text-change', syncHtmlFromEditor);
         await refreshEdmEmbeds();
         ensureTrailingParagraph();
       }
