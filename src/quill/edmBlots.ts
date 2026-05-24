@@ -245,7 +245,7 @@ let registered = false;
  *
  * - `edmImage` — 复用 Quill 内置 `image` 图标
  * - `edmVideo` — 复用 Quill 内置 `video` 图标
- * - `edmFile`  — 复用 Quill 内置 `link` 图标
+ * - `edmFile`  — 自定义上传文件图标
  *
  * 调用是幂等的，重复调用不会重复注册。
  *
@@ -274,8 +274,11 @@ export function registerEdmBlots(): void {
   if (!icons['edmVideo'] && icons['video']) {
     icons['edmVideo'] = icons['video'];
   }
-  if (!icons['edmFile'] && icons['link']) {
-    icons['edmFile'] = icons['link'];
+  if (!icons['edmFile']) {
+    icons['edmFile'] = `<svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+  <path d="M9.5 11V3.5m0 0L7 6m2.5-2.5L12 6" stroke="currentColor" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M3.5 8.5v4a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-4" stroke="currentColor" fill="none" stroke-width="1.6" stroke-linecap="round"/>
+</svg>`;
   }
 
   registered = true;
