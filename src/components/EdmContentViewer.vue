@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../types/edm';
 
 const props = defineProps<{
@@ -14,8 +14,56 @@ const props = defineProps<{
 
 const containerRef = ref<HTMLDivElement | null>(null);
 
-onMounted(() => refreshEmbeds());
+let viewObserver: IntersectionObserver | null = null;
+
+function getViewObserver(): IntersectionObserver {
+  if (!viewObserver) {
+    viewObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const el = entry.target as HTMLElement;
+          viewObserver!.unobserve(el);
+
+          const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
+          if (!media) continue;
+
+          const src = media.dataset.src;
+          if (!src) continue;
+
+          media.src = src;
+          if (media instanceof HTMLVideoElement) {
+            media.onloadedmetadata = () => {
+              el.classList.remove('ql-edm-loading');
+              el.classList.add('ql-edm-loaded');
+            };
+          } else {
+            media.onload = () => {
+              el.classList.remove('ql-edm-loading');
+              el.classList.add('ql-edm-loaded');
+            };
+          }
+          media.onerror = () => {
+            el.classList.remove('ql-edm-loading');
+            el.classList.add('ql-edm-error');
+          };
+        }
+      },
+      { rootMargin: '200px' },
+    );
+  }
+  return viewObserver;
+}
+
+onMounted(() => {
+  refreshEmbeds();
+});
 watch(() => props.content, () => nextTick(refreshEmbeds));
+
+onBeforeUnmount(() => {
+  viewObserver?.disconnect();
+  viewObserver = null;
+});
 
 /** 只刷新 src/href 为空或默认 /api/edm/... 格式的嵌入元素 */
 async function refreshEmbeds(): Promise<void> {
@@ -41,11 +89,21 @@ async function refreshEmbeds(): Promise<void> {
         const url = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult, 'download');
         if (link) link.setAttribute('href', url);
       } else {
-        const media = el.querySelector('img, video');
-        if (media && media.getAttribute('src') && !isUnresolvedUrl(media.getAttribute('src')!)) return;
+        const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
+        if (!media) return;
+
+        // 已有已解析 URL，直接懒加载
+        if (media.dataset.src && !isUnresolvedUrl(media.dataset.src)) {
+          el.classList.add('ql-edm-loading');
+          getViewObserver().observe(el);
+          return;
+        }
+
         const previewUrl = await resolveUrl(props.resolvePreviewUrl, edmId, kind, dummyResult, 'preview');
         const url = previewUrl || (await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult, 'download'));
-        if (media) media.setAttribute('src', url);
+        media.dataset.src = url;
+        el.classList.add('ql-edm-loading');
+        getViewObserver().observe(el);
       }
     }),
   );
@@ -173,5 +231,73 @@ async function handleFileDownload(event: MouseEvent): Promise<void> {
 :deep(.ql-edm-file:hover) {
   border-color: #89aed8;
   background: #eef6ff;
+}
+
+/* ---- Lazy loading states ---- */
+:deep(.ql-edm-loading) {
+  position: relative;
+  overflow: hidden;
+}
+
+:deep(.ql-edm-image.ql-edm-loading) {
+  min-height: 200px;
+  background: #f0f4f8;
+}
+
+:deep(.ql-edm-video.ql-edm-loading) {
+  min-height: 220px;
+  background: #1a1f2e;
+}
+
+:deep(.ql-edm-loading::after) {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: edm-view-shimmer 1.5s ease-in-out infinite;
+}
+
+:deep(.ql-edm-video.ql-edm-loading::after) {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+}
+
+:deep(.ql-edm-loaded img),
+:deep(.ql-edm-loaded video) {
+  opacity: 1;
+}
+
+:deep(.ql-edm-loading img),
+:deep(.ql-edm-loading video) {
+  opacity: 0;
+}
+
+:deep(.ql-edm-error) {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+:deep(.ql-edm-error::before) {
+  content: '⚠';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: #dc2626;
+}
+
+@keyframes edm-view-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 </style>

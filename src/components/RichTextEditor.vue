@@ -173,6 +173,13 @@ const {
   background: #f7fafc;
 }
 
+:deep(.ql-edm-image img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
 /* ---- EDM video embed ---- */
 :deep(.ql-edm-video) {
   display: block;
@@ -183,6 +190,80 @@ const {
   border: 1px solid #dbe4ee;
   border-radius: 8px;
   background: #111827;
+}
+
+:deep(.ql-edm-video video) {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* ---- Lazy loading states ---- */
+:deep(.ql-edm-loading) {
+  position: relative;
+  overflow: hidden;
+}
+
+:deep(.ql-edm-image.ql-edm-loading) {
+  min-height: 200px;
+  background: #f0f4f8;
+}
+
+:deep(.ql-edm-video.ql-edm-loading) {
+  min-height: 220px;
+  background: #1a1f2e;
+}
+
+:deep(.ql-edm-loading::after) {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: edm-shimmer 1.5s ease-in-out infinite;
+}
+
+:deep(.ql-edm-video.ql-edm-loading::after) {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+}
+
+:deep(.ql-edm-loaded img),
+:deep(.ql-edm-loaded video) {
+  opacity: 1;
+}
+
+:deep(.ql-edm-loading img),
+:deep(.ql-edm-loading video) {
+  opacity: 0;
+}
+
+:deep(.ql-edm-error) {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+:deep(.ql-edm-error::before) {
+  content: '⚠';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: #dc2626;
+}
+
+@keyframes edm-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* ---- EDM file embed ---- */

@@ -2,6 +2,51 @@ import Quill from 'quill';
 import type { EdmEmbedValue, EdmUploadKind } from '../types/edm';
 
 // ============================================================
+// Lazy loading observer
+// ============================================================
+
+let lazyObserver: IntersectionObserver | null = null;
+
+function getLazyObserver(): IntersectionObserver {
+  if (!lazyObserver) {
+    lazyObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const el = entry.target as HTMLElement;
+          lazyObserver!.unobserve(el);
+
+          const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
+          if (!media) continue;
+
+          const src = media.dataset.src;
+          if (!src) continue;
+
+          media.src = src;
+          if (media instanceof HTMLVideoElement) {
+            media.onloadedmetadata = () => {
+              el.classList.remove('ql-edm-loading');
+              el.classList.add('ql-edm-loaded');
+            };
+          } else {
+            media.onload = () => {
+              el.classList.remove('ql-edm-loading');
+              el.classList.add('ql-edm-loaded');
+            };
+          }
+          media.onerror = () => {
+            el.classList.remove('ql-edm-loading');
+            el.classList.add('ql-edm-error');
+          };
+        }
+      },
+      { rootMargin: '200px' },
+    );
+  }
+  return lazyObserver;
+}
+
+// ============================================================
 // URL helpers
 // ============================================================
 
@@ -139,16 +184,24 @@ export class EdmImageBlot extends BlockEmbed {
     const img = document.createElement('img');
 
     setCommonAttributes(node, normalizedValue, 'image');
-    img.setAttribute('src', sanitizeResourceUrl(normalizedValue.url));
+    img.dataset.src = sanitizeResourceUrl(normalizedValue.url);
     img.setAttribute('alt', normalizedValue.name || 'uploaded image');
     setCommonAttributes(img, normalizedValue, 'image');
+    node.classList.add('ql-edm-loading');
     node.append(img);
 
+    getLazyObserver().observe(node);
     return node;
   }
 
   static value(node: HTMLElement): EdmEmbedValue {
-    return readCommonValue(node, 'src');
+    const val = readCommonValue(node, 'src');
+    if (!val.url || val.url.startsWith('/api/edm/')) {
+      const target = findEdmTarget(node) || node;
+      const dataSrc = target.dataset.src;
+      if (dataSrc) val.url = dataSrc;
+    }
+    return val;
   }
 }
 
@@ -168,18 +221,26 @@ export class EdmVideoBlot extends BlockEmbed {
     const video = document.createElement('video');
 
     setCommonAttributes(node, normalizedValue, 'video');
-    video.setAttribute('src', sanitizeResourceUrl(normalizedValue.url));
+    video.dataset.src = sanitizeResourceUrl(normalizedValue.url);
     video.setAttribute('controls', 'controls');
     video.setAttribute('preload', 'metadata');
     video.setAttribute('playsinline', 'true');
     setCommonAttributes(video, normalizedValue, 'video');
+    node.classList.add('ql-edm-loading');
     node.append(video);
 
+    getLazyObserver().observe(node);
     return node;
   }
 
   static value(node: HTMLElement): EdmEmbedValue {
-    return readCommonValue(node, 'src');
+    const val = readCommonValue(node, 'src');
+    if (!val.url || val.url.startsWith('/api/edm/')) {
+      const target = findEdmTarget(node) || node;
+      const dataSrc = target.dataset.src;
+      if (dataSrc) val.url = dataSrc;
+    }
+    return val;
   }
 }
 
