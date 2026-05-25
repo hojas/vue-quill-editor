@@ -54,6 +54,15 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   const lastHtml = ref('');
 
   let quill: Quill | null = null;
+  const blockDragStart = (e: DragEvent) => e.preventDefault();
+  const blockDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  };
+  const blockDrop = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  };
 
   // ---- computed ----
   const isBusy = computed(() => uploadingKind.value !== null);
@@ -87,8 +96,9 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
 
     quill.on('text-change', syncHtmlFromEditor);
     quill.root.addEventListener('paste', handlePaste);
-    quill.root.addEventListener('drop', handleDrop);
-    quill.root.addEventListener('dragover', handleDragOver);
+    quill.root.addEventListener('dragstart', blockDragStart);
+    quill.root.addEventListener('dragover', blockDragOver, true);
+    quill.root.addEventListener('drop', blockDrop, true);
 
     if (props.modelValue) {
       const resolvedHtml = await resolveHtmlEmbeds(props.modelValue);
@@ -106,8 +116,9 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     if (!quill) return;
     quill.off('text-change', syncHtmlFromEditor);
     quill.root.removeEventListener('paste', handlePaste);
-    quill.root.removeEventListener('drop', handleDrop);
-    quill.root.removeEventListener('dragover', handleDragOver);
+    quill.root.removeEventListener('dragstart', blockDragStart);
+    quill.root.removeEventListener('dragover', blockDragOver, true);
+    quill.root.removeEventListener('drop', blockDrop, true);
     quill = null;
   });
 
@@ -295,26 +306,12 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     return doc.body.innerHTML;
   }
 
-  // ---- drag & drop, paste ----
+  // ---- paste ----
   function handlePaste(event: ClipboardEvent): void {
     const files = Array.from(event.clipboardData?.files || []);
     if (!files.length) return;
     event.preventDefault();
     void insertFiles(files);
-  }
-
-  function handleDrop(event: DragEvent): void {
-    const files = Array.from(event.dataTransfer?.files || []);
-    if (!files.length) return;
-    event.preventDefault();
-    void insertFiles(files);
-  }
-
-  function handleDragOver(event: DragEvent): void {
-    const hasFile = Array.from(event.dataTransfer?.items || []).some(
-      (item) => item.kind === 'file',
-    );
-    if (hasFile) event.preventDefault();
   }
 
   /**
