@@ -30,6 +30,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "rm -rf dist && vue-tsc --project tsconfig.build.json && vite build",
+    "build:demo": "vue-tsc --project tsconfig.build.json && vite build --config vite.demo.config.ts",
     "preview": "vite preview --host 127.0.0.1"
   },
   "peerDependencies": {
