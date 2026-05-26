@@ -76,7 +76,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   // ---- lifecycle ----
   onMounted(async () => {
     registerEdmBlots();
-    setEdmUrlResolvers(props.resolvePreviewUrl, props.resolveDownloadUrl);
+    setEdmUrlResolvers(props.resolvePreviewUrl);
     if (!editorRef.value) return;
 
     quill = new Quill(editorRef.value, {
@@ -269,10 +269,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
 
   // ---- embed refresh (loaded content) ----
   /**
-   * 在 HTML 字符串中预解析所有 EDM 嵌入元素的 URL。
+   * 预处理 HTML 中的 EDM 嵌入元素。
    *
-   * 先解析再 paste，避免浏览器先看到未解析的 `/api/edm/...` URL 触发无意义的请求，
-   * 也避免 paste 后再操作 DOM（refreshEdmEmbeds）导致二次下载。
+   * 文件类型预解析下载 URL，图片/视频仅清除旧的 data-src，
+   * 交由 IntersectionObserver 在元素进入视口时懒解析预览 URL。
    */
   async function resolveHtmlEmbeds(html: string): Promise<string> {
     const parser = new DOMParser();
@@ -285,14 +285,14 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
         const kind = el.getAttribute('data-edm-type') as EdmUploadKind;
         if (!edmId || !kind) return;
 
-        const attachmentIdRaw = el.getAttribute('data-attachment-id');
-        const dummyResult: EdmUploadResult = {
-          edmId,
-          attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined,
-        };
-
         if (kind === 'file') {
-          const url = await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
+          const attachmentIdRaw = el.getAttribute('data-attachment-id');
+          const url = await resolveUrl(
+            props.resolveDownloadUrl,
+            edmId,
+            kind,
+            { edmId, attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined },
+          );
           const link = el.querySelector('a');
           if (link) link.setAttribute('href', url);
         } else {

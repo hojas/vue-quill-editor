@@ -7,16 +7,10 @@ import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../types/edm'
 
 let lazyObserver: IntersectionObserver | null = null;
 
-let lazyResolvers: {
-  resolvePreviewUrl?: EdmUrlResolver;
-  resolveDownloadUrl?: EdmUrlResolver;
-} = {};
+let resolvePreviewUrlResolver: EdmUrlResolver | undefined;
 
-export function setEdmUrlResolvers(
-  resolvePreviewUrl?: EdmUrlResolver,
-  resolveDownloadUrl?: EdmUrlResolver,
-): void {
-  lazyResolvers = { resolvePreviewUrl, resolveDownloadUrl };
+export function setEdmUrlResolvers(resolver?: EdmUrlResolver): void {
+  resolvePreviewUrlResolver = resolver;
 }
 
 function getLazyObserver(): IntersectionObserver {
@@ -44,18 +38,10 @@ async function loadMedia(
   el: HTMLElement,
   media: HTMLImageElement | HTMLVideoElement,
 ): Promise<void> {
-  if (!lazyResolvers.resolvePreviewUrl) {
-    el.classList.remove('ql-edm-loading');
-    el.classList.add('ql-edm-error');
-    return;
-  }
+  const edmId = media.dataset.edmId || el.getAttribute('data-edm-id') || '';
+  const kind = (el.getAttribute('data-edm-type') as EdmUploadKind) || 'image';
 
-  const edmId =
-    media.dataset.edmId ||
-    el.getAttribute('data-edm-id') ||
-    el.querySelector('[data-edm-id]')?.getAttribute('data-edm-id') ||
-    '';
-  if (!edmId) {
+  if (!resolvePreviewUrlResolver || !edmId) {
     el.classList.remove('ql-edm-loading');
     el.classList.add('ql-edm-error');
     return;
@@ -64,31 +50,21 @@ async function loadMedia(
   try {
     const attachmentId =
       media.dataset.attachmentId || el.getAttribute('data-attachment-id') || '';
-    const kind = (el.getAttribute('data-edm-type') as EdmUploadKind) || 'image';
-    const src = await lazyResolvers.resolvePreviewUrl(attachmentId, edmId, kind);
+    const src = await resolvePreviewUrlResolver(attachmentId, edmId, kind);
     if (!src) throw new Error('empty url');
+    media.onload = media.onloadedmetadata = () => {
+      el.classList.remove('ql-edm-loading');
+      el.classList.add('ql-edm-loaded');
+    };
+    media.onerror = () => {
+      el.classList.remove('ql-edm-loading');
+      el.classList.add('ql-edm-error');
+    };
     media.src = src;
   } catch {
     el.classList.remove('ql-edm-loading');
     el.classList.add('ql-edm-error');
-    return;
   }
-
-  if (media instanceof HTMLVideoElement) {
-    media.onloadedmetadata = () => {
-      el.classList.remove('ql-edm-loading');
-      el.classList.add('ql-edm-loaded');
-    };
-  } else {
-    media.onload = () => {
-      el.classList.remove('ql-edm-loading');
-      el.classList.add('ql-edm-loaded');
-    };
-  }
-  media.onerror = () => {
-    el.classList.remove('ql-edm-loading');
-    el.classList.add('ql-edm-error');
-  };
 }
 
 // ============================================================
