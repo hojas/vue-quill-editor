@@ -1,6 +1,6 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue';
 import Quill from 'quill';
-import { registerEdmBlots } from '../quill/edmBlots';
+import { registerEdmBlots, setEdmUrlResolvers } from '../quill/edmBlots';
 import type {
   EdmAttachment,
   EdmEmbedValue,
@@ -76,6 +76,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   // ---- lifecycle ----
   onMounted(async () => {
     registerEdmBlots();
+    setEdmUrlResolvers(props.resolvePreviewUrl, props.resolveDownloadUrl);
     if (!editorRef.value) return;
 
     quill = new Quill(editorRef.value, {
@@ -295,10 +296,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
           const link = el.querySelector('a');
           if (link) link.setAttribute('href', url);
         } else {
-          const previewUrl = await resolveUrl(props.resolvePreviewUrl, edmId, kind, dummyResult);
-          const url = previewUrl || (await resolveUrl(props.resolveDownloadUrl, edmId, kind, dummyResult));
           const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
-          if (media) media.dataset.src = url;
+          if (media) delete media.dataset.src;
         }
       }),
     );

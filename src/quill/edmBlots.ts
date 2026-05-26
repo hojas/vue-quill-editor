@@ -1,11 +1,23 @@
 import Quill from 'quill';
-import type { EdmEmbedValue, EdmUploadKind } from '../types/edm';
+import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../types/edm';
 
 // ============================================================
 // Lazy loading observer
 // ============================================================
 
 let lazyObserver: IntersectionObserver | null = null;
+
+let lazyResolvers: {
+  resolvePreviewUrl?: EdmUrlResolver;
+  resolveDownloadUrl?: EdmUrlResolver;
+} = {};
+
+export function setEdmUrlResolvers(
+  resolvePreviewUrl?: EdmUrlResolver,
+  resolveDownloadUrl?: EdmUrlResolver,
+): void {
+  lazyResolvers = { resolvePreviewUrl, resolveDownloadUrl };
+}
 
 function getLazyObserver(): IntersectionObserver {
   if (!lazyObserver) {
@@ -20,30 +32,64 @@ function getLazyObserver(): IntersectionObserver {
           if (!media) continue;
 
           const src = media.dataset.src;
-          if (!src) continue;
-
-          media.src = src;
-          if (media instanceof HTMLVideoElement) {
-            media.onloadedmetadata = () => {
-              el.classList.remove('ql-edm-loading');
-              el.classList.add('ql-edm-loaded');
-            };
-          } else {
-            media.onload = () => {
-              el.classList.remove('ql-edm-loading');
-              el.classList.add('ql-edm-loaded');
-            };
-          }
-          media.onerror = () => {
-            el.classList.remove('ql-edm-loading');
-            el.classList.add('ql-edm-error');
-          };
+          void loadMedia(el, media, src);
         }
       },
       { rootMargin: '200px' },
     );
   }
   return lazyObserver;
+}
+
+async function loadMedia(
+  el: HTMLElement,
+  media: HTMLImageElement | HTMLVideoElement,
+  currentSrc: string | undefined,
+): Promise<void> {
+  let src = currentSrc || '';
+
+  if ((!src || src.startsWith('/api/edm/')) && lazyResolvers.resolvePreviewUrl) {
+    const edmId =
+      media.dataset.edmId ||
+      el.getAttribute('data-edm-id') ||
+      el.querySelector('[data-edm-id]')?.getAttribute('data-edm-id') ||
+      '';
+    if (edmId) {
+      try {
+        const attachmentId =
+          media.dataset.attachmentId || el.getAttribute('data-attachment-id') || '';
+        const kind = (el.getAttribute('data-edm-type') as EdmUploadKind) || 'image';
+        src = await lazyResolvers.resolvePreviewUrl(attachmentId, edmId, kind);
+      } catch {
+        el.classList.remove('ql-edm-loading');
+        el.classList.add('ql-edm-error');
+        return;
+      }
+    }
+  }
+
+  if (!src) {
+    el.classList.remove('ql-edm-loading');
+    el.classList.add('ql-edm-error');
+    return;
+  }
+
+  media.src = src;
+  if (media instanceof HTMLVideoElement) {
+    media.onloadedmetadata = () => {
+      el.classList.remove('ql-edm-loading');
+      el.classList.add('ql-edm-loaded');
+    };
+  } else {
+    media.onload = () => {
+      el.classList.remove('ql-edm-loading');
+      el.classList.add('ql-edm-loaded');
+    };
+  }
+  media.onerror = () => {
+    el.classList.remove('ql-edm-loading');
+    el.classList.add('ql-edm-error');
+  };
 }
 
 // ============================================================
