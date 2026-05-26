@@ -102,12 +102,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     quill.root.addEventListener('drop', blockDrop, true);
 
     if (props.modelValue) {
-      const resolvedHtml = await resolveHtmlEmbeds(props.modelValue);
-      quill.off('text-change', syncHtmlFromEditor);
-      quill.clipboard.dangerouslyPasteHTML(resolvedHtml, 'silent');
-      quill.on('text-change', syncHtmlFromEditor);
-      ensureTrailingParagraph();
-      syncHtmlFromEditor();
+      await setEditorHtml(props.modelValue);
     } else {
       lastHtml.value = getEditorHtml();
     }
@@ -130,13 +125,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       if (!quill || nextValue === lastHtml.value) return;
       const selection = quill.getSelection();
       quill.setText('', 'silent');
-      if (nextValue) {
-        const resolvedHtml = await resolveHtmlEmbeds(nextValue);
-        quill.off('text-change', syncHtmlFromEditor);
-        quill.clipboard.dangerouslyPasteHTML(resolvedHtml, 'silent');
-        quill.on('text-change', syncHtmlFromEditor);
-        ensureTrailingParagraph();
-      }
+      if (nextValue) await setEditorHtml(nextValue);
       const nextIndex = Math.min(selection?.index || 0, quill.getLength() - 1);
       quill.setSelection(nextIndex, selection?.length || 0, 'silent');
       syncHtmlFromEditor();
@@ -313,15 +302,16 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     void insertFiles(files);
   }
 
-  /**
-   * 确保最后一个 EDM 嵌入元素之后有段落，
-   * 防止保存后再打开时 trailing `<p><br></p>` 被 Quill 裁剪，
-   * 导致光标无法定位到文件链接后方进行删除。
-   */
-  /**
-   * Quill 加载 HTML 时可能将末尾的空 `<p><br></p>` 当作结构换行符合并。
-   * 无脑在末尾补一个 `\n`，确保始终有可见段落，使 EDM embed 后方可以定位光标删除。
-   */
+  async function setEditorHtml(html: string): Promise<void> {
+    if (!quill) return;
+    const resolvedHtml = await resolveHtmlEmbeds(html);
+    quill.off('text-change', syncHtmlFromEditor);
+    quill.clipboard.dangerouslyPasteHTML(resolvedHtml, 'silent');
+    quill.on('text-change', syncHtmlFromEditor);
+    ensureTrailingParagraph();
+    syncHtmlFromEditor();
+  }
+
   function ensureTrailingParagraph(): void {
     if (!quill) return;
     quill.insertText(quill.getLength(), '\n', 'api');
