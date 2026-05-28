@@ -12,10 +12,12 @@
     "declaration": true,
     "emitDeclarationOnly": true,
     "declarationDir": "./dist",
+    "rootDir": "./src",
     "jsx": "preserve"
   },
   "include": [
     "src/index.ts",
+    "src/**/*.d.ts",
     "src/types/**/*.ts",
     "src/quill/**/*.ts",
     "src/composables/**/*.ts",

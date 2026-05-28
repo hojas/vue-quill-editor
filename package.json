@@ -38,14 +38,14 @@
     "vue": "^3.4.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^6.0.7",
     "quill": "2.0.3",
-    "typescript": "~5.6.3",
-    "vite": "^6.0.5",
-    "vue": "^3.5.13",
-    "vue-tsc": "^2.2.0"
+    "typescript": "~6.0.3",
+    "vite": "^8.0.14",
+    "vue": "^3.5.35",
+    "vue-tsc": "^3.3.2"
   },
   "dependencies": {
-    "vue-router": "^5.0.7"
+    "vue-router": "^5.1.0"
   }
 }
