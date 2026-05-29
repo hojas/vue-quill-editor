@@ -95,6 +95,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       },
     });
 
+    addToolbarTitles();
     quill.on('text-change', syncHtmlFromEditor);
     quill.root.addEventListener('paste', handlePaste);
     quill.root.addEventListener('dragstart', blockDragStart);
@@ -136,6 +137,38 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     () => props.readOnly,
     (nextReadOnly) => quill?.enable(!nextReadOnly),
   );
+
+  // ---- toolbar titles ----
+  function addToolbarTitles(): void {
+    if (!quill) return;
+    const tb = quill.getModule('toolbar') as { container?: HTMLElement } | undefined;
+    const container = tb?.container;
+    if (!(container instanceof HTMLElement)) return;
+
+    const titles: Record<string, string> = {
+      'ql-header': '标题',
+      'ql-bold': '加粗',
+      'ql-italic': '倾斜',
+      'ql-underline': '下划线',
+      'ql-strike': '删除线',
+      'ql-list[value="ordered"]': '有序列表',
+      'ql-list[value="bullet"]': '无序列表',
+      'ql-blockquote': '引用',
+      'ql-code-block': '代码块',
+      'ql-link': '链接',
+      'ql-edmImage': '图片',
+      'ql-edmVideo': '视频',
+      'ql-edmFile': '文件',
+      'ql-clean': '清除格式',
+    };
+
+    for (const selector of Object.keys(titles)) {
+      const el = container.querySelector(`.${selector}`);
+      if (el && !el.hasAttribute('title')) {
+        el.setAttribute('title', titles[selector]);
+      }
+    }
+  }
 
   // ---- file picker ----
   function openFilePicker(kind: EdmUploadKind): void {
