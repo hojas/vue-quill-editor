@@ -1,5 +1,6 @@
 import Quill from 'quill';
 import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../types/edm';
+import { defaultEdmUrl, isUnresolvedUrl } from '../utils/helpers';
 
 // ============================================================
 // Lazy loading — IntersectionObserver + resolver
@@ -67,11 +68,6 @@ async function loadMedia(
 // URL & attribute helpers
 // ============================================================
 
-function defaultEdmDownloadUrl(edmId: string, attachmentId?: number): string {
-  const id = attachmentId ?? edmId;
-  return `/api/edm/${encodeURIComponent(String(id))}/download`;
-}
-
 function sanitizeResourceUrl(url: string): string {
   if (!url) return '';
   if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) {
@@ -89,12 +85,12 @@ function sanitizeResourceUrl(url: string): string {
 
 function normalizeValue(value: EdmEmbedValue | string): EdmEmbedValue {
   if (typeof value === 'string') {
-    return { edmId: value, url: defaultEdmDownloadUrl(value) };
+    return { edmId: value, url: defaultEdmUrl(value) };
   }
   return {
     edmId: value.edmId,
     attachmentId: value.attachmentId,
-    url: value.url || defaultEdmDownloadUrl(value.edmId, value.attachmentId),
+    url: value.url || defaultEdmUrl(value.edmId, value.attachmentId),
     name: value.name,
     mimeType: value.mimeType,
     size: value.size,
@@ -133,7 +129,7 @@ function readCommonValue(root: HTMLElement, urlAttribute: 'src' | 'href'): EdmEm
   const attachmentIdRaw =
     target.getAttribute('data-attachment-id') || root.getAttribute('data-attachment-id');
   const fallbackUrl = edmId
-    ? defaultEdmDownloadUrl(edmId, attachmentIdRaw ? Number(attachmentIdRaw) : undefined)
+    ? defaultEdmUrl(edmId, attachmentIdRaw ? Number(attachmentIdRaw) : undefined)
     : '';
 
   return {
@@ -161,7 +157,7 @@ const BlockEmbed = Quill.import('blots/block/embed') as any;
 
 function mediaBlotValue(node: HTMLElement): EdmEmbedValue {
   const val = readCommonValue(node, 'src');
-  if (!val.url || val.url.startsWith('/api/edm/')) {
+  if (!val.url || isUnresolvedUrl(val.url)) {
     const target = findEdmTarget(node) || node;
     const dataSrc = target.dataset.src;
     if (dataSrc) val.url = dataSrc;

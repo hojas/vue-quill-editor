@@ -1,18 +1,7 @@
+<script setup lang="ts">
+// Root app shell — routes are defined in src/router/index.ts
+</script>
+
 <template>
   <RouterView />
 </template>
-
-<style>
-*,
-*::after,
-*::before {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f2f5f9;
-  color: #1f2a37;
-}
-</style>

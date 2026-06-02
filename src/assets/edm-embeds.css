@@ -1,0 +1,147 @@
+/* ============================================================
+   Shared EDM embed styles
+   Used by both RichTextEditor and EdmContentViewer.
+   Class names are unique enough (ql-edm-*) to live globally.
+   ============================================================ */
+
+/* ---- Image embed ---- */
+.ql-edm-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 14px 0;
+  border: 1px solid #e1e7ef;
+  border-radius: 8px;
+  background: #f7fafc;
+}
+
+.ql-edm-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* ---- Video embed ---- */
+.ql-edm-video {
+  display: block;
+  width: min(100%, 760px);
+  max-width: 100%;
+  min-height: 220px;
+  margin: 14px 0;
+  border: 1px solid #dbe4ee;
+  border-radius: 8px;
+  background: #111827;
+}
+
+.ql-edm-video video {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* ---- File embed ---- */
+.ql-edm-file {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid #cdd9e8;
+  border-radius: 8px;
+  background: #f8fbff;
+  color: #205493;
+  font-weight: 600;
+  text-decoration: none;
+  vertical-align: middle;
+}
+
+.ql-edm-file::before {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: #e6f0fb;
+  color: #205493;
+  content: 'F';
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ql-edm-file:hover {
+  border-color: #89aed8;
+  background: #eef6ff;
+}
+
+/* ---- Lazy loading states ---- */
+.ql-edm-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.ql-edm-image.ql-edm-loading {
+  min-height: 200px;
+  background: #f0f4f8;
+}
+
+.ql-edm-video.ql-edm-loading {
+  min-height: 220px;
+  background: #1a1f2e;
+}
+
+.ql-edm-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: edm-shimmer 1.5s ease-in-out infinite;
+}
+
+.ql-edm-video.ql-edm-loading::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+}
+
+.ql-edm-loaded img,
+.ql-edm-loaded video {
+  opacity: 1;
+}
+
+.ql-edm-loading img,
+.ql-edm-loading video {
+  opacity: 0;
+}
+
+/* ---- Error state ---- */
+.ql-edm-error {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.ql-edm-error::before {
+  content: '⚠';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: #dc2626;
+}
+
+@keyframes edm-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

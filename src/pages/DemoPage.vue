@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { EdmAttachment, EdmUploadKind } from '../types/edm';
+import RichTextEditor from '../components/RichTextEditor.vue';
+import EdmContentViewer from '../components/EdmContentViewer.vue';
+import { resolveMockEdmUrl, uploadToMockEdm } from '../services/mockEdmApi';
+
+const content = ref('<p>欢迎编辑 EDM 内容。</p>');
+const attachments = ref<EdmAttachment[]>([]);
+
+async function uploadEdm(file: File, kind: EdmUploadKind) {
+  return uploadToMockEdm(file, kind);
+}
+
+async function resolveEdmUrl(attachmentId: string, edmId: string): Promise<string> {
+  return resolveMockEdmUrl(attachmentId || edmId);
+}
+</script>
+
 <template>
   <main class="app-shell">
     <header class="app-header">
@@ -34,25 +53,6 @@
     </details>
   </main>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-import RichTextEditor from '../components/RichTextEditor.vue';
-import EdmContentViewer from '../components/EdmContentViewer.vue';
-import { resolveMockEdmUrl, uploadToMockEdm } from '../services/mockEdmApi';
-import type { EdmAttachment, EdmUploadKind } from '../types/edm';
-
-const content = ref('<p>欢迎编辑 EDM 内容。</p>');
-const attachments = ref<EdmAttachment[]>([]);
-
-async function uploadEdm(file: File, kind: EdmUploadKind) {
-  return uploadToMockEdm(file, kind);
-}
-
-async function resolveEdmUrl(attachmentId: string, edmId: string): Promise<string> {
-  return resolveMockEdmUrl(attachmentId || edmId);
-}
-</script>
 
 <style scoped>
 .app-shell {

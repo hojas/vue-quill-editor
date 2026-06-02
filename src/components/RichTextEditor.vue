@@ -1,26 +1,8 @@
-<template>
-  <div class="rich-editor" :class="{ 'rich-editor--readonly': readOnly }">
-    <div class="rich-editor__canvas">
-      <div ref="editorRef" class="rich-editor__body"></div>
-
-      <div v-if="isBusy" class="rich-editor__uploading" role="status">
-        <span class="rich-editor__spinner" aria-hidden="true"></span>
-        <span>{{ uploadingLabel }}</span>
-      </div>
-    </div>
-
-    <input ref="imageInputRef" class="rich-editor__input" type="file" :accept="imageAccept" multiple
-      @change="handleFileInputChange('image', $event)" />
-    <input ref="videoInputRef" class="rich-editor__input" type="file" :accept="videoAccept" multiple
-      @change="handleFileInputChange('video', $event)" />
-    <input ref="fileInputRef" class="rich-editor__input" type="file" :accept="fileAccept" multiple
-      @change="handleFileInputChange('file', $event)" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import 'quill/dist/quill.snow.css';
 
+import { useEdmEditor } from '../composables/useEdmEditor';
+import type { UseEdmEditorEmit, UseEdmEditorProps } from '../composables/useEdmEditor';
 import type {
   EdmAttachment,
   EdmUploadErrorPayload,
@@ -29,8 +11,6 @@ import type {
   EdmUploadSuccessPayload,
   EdmUrlResolver,
 } from '../types/edm';
-import { useEdmEditor } from '../composables/useEdmEditor';
-import type { UseEdmEditorProps, UseEdmEditorEmit } from '../composables/useEdmEditor';
 
 defineOptions({ name: 'RichTextEditor' });
 
@@ -72,11 +52,54 @@ const {
   imageInputRef,
   videoInputRef,
   fileInputRef,
+  errorMessage,
   isBusy,
   uploadingLabel,
   handleFileInputChange,
 } = useEdmEditor(props as UseEdmEditorProps, emit as UseEdmEditorEmit);
 </script>
+
+<template>
+  <div class="rich-editor" :class="{ 'rich-editor--readonly': readOnly }">
+    <div class="rich-editor__canvas">
+      <div ref="editorRef" class="rich-editor__body"></div>
+
+      <div v-if="isBusy" class="rich-editor__uploading" role="status">
+        <span class="rich-editor__spinner" aria-hidden="true"></span>
+        <span>{{ uploadingLabel }}</span>
+      </div>
+    </div>
+
+    <input
+      ref="imageInputRef"
+      class="rich-editor__input"
+      type="file"
+      :accept="imageAccept"
+      multiple
+      @change="handleFileInputChange('image', $event)"
+    />
+    <input
+      ref="videoInputRef"
+      class="rich-editor__input"
+      type="file"
+      :accept="videoAccept"
+      multiple
+      @change="handleFileInputChange('video', $event)"
+    />
+    <input
+      ref="fileInputRef"
+      class="rich-editor__input"
+      type="file"
+      :accept="fileAccept"
+      multiple
+      @change="handleFileInputChange('file', $event)"
+    />
+
+    <div v-if="errorMessage" class="rich-editor__error" role="alert">
+      {{ errorMessage }}
+    </div>
+  </div>
+</template>
 
 <style scoped>
 /* ---- Container ---- */
@@ -131,6 +154,16 @@ const {
   animation: rich-editor-spin 0.7s linear infinite;
 }
 
+/* ---- Error message ---- */
+.rich-editor__error {
+  margin: 0;
+  padding: 8px 18px;
+  border-top: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
 /* ---- Quill toolbar overrides ---- */
 :deep(.ql-toolbar.ql-snow) {
   border: 0;
@@ -160,147 +193,6 @@ const {
   left: 18px;
   color: #8a97a8;
   font-style: normal;
-}
-
-/* ---- EDM image embed ---- */
-:deep(.ql-edm-image) {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  margin: 14px 0;
-  border: 1px solid #e1e7ef;
-  border-radius: 8px;
-  background: #f7fafc;
-}
-
-:deep(.ql-edm-image img) {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-}
-
-/* ---- EDM video embed ---- */
-:deep(.ql-edm-video) {
-  display: block;
-  width: min(100%, 760px);
-  max-width: 100%;
-  min-height: 220px;
-  margin: 14px 0;
-  border: 1px solid #dbe4ee;
-  border-radius: 8px;
-  background: #111827;
-}
-
-:deep(.ql-edm-video video) {
-  display: block;
-  width: 100%;
-  border-radius: 8px;
-}
-
-/* ---- Lazy loading states ---- */
-:deep(.ql-edm-loading) {
-  position: relative;
-  overflow: hidden;
-}
-
-:deep(.ql-edm-image.ql-edm-loading) {
-  min-height: 200px;
-  background: #f0f4f8;
-}
-
-:deep(.ql-edm-video.ql-edm-loading) {
-  min-height: 220px;
-  background: #1a1f2e;
-}
-
-:deep(.ql-edm-loading::after) {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    transparent 100%
-  );
-  animation: edm-shimmer 1.5s ease-in-out infinite;
-}
-
-:deep(.ql-edm-video.ql-edm-loading::after) {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    transparent 100%
-  );
-}
-
-:deep(.ql-edm-loaded img),
-:deep(.ql-edm-loaded video) {
-  opacity: 1;
-}
-
-:deep(.ql-edm-loading img),
-:deep(.ql-edm-loading video) {
-  opacity: 0;
-}
-
-:deep(.ql-edm-error) {
-  border-color: #fca5a5;
-  background: #fef2f2;
-}
-
-:deep(.ql-edm-error::before) {
-  content: '⚠';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 24px;
-  color: #dc2626;
-}
-
-@keyframes edm-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-/* ---- EDM file embed ---- */
-:deep(.ql-edm-file) {
-  display: inline-flex;
-  max-width: 100%;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0;
-  padding: 8px 10px;
-  border: 1px solid #cdd9e8;
-  border-radius: 8px;
-  background: #f8fbff;
-  color: #205493;
-  font-weight: 600;
-  text-decoration: none;
-  vertical-align: middle;
-}
-
-:deep(.ql-edm-file::before) {
-  display: inline-flex;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  background: #e6f0fb;
-  color: #205493;
-  content: 'F';
-  font-size: 12px;
-  font-weight: 700;
-}
-
-:deep(.ql-edm-file:hover) {
-  border-color: #89aed8;
-  background: #eef6ff;
 }
 
 @keyframes rich-editor-spin {

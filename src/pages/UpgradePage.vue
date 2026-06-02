@@ -1,3 +1,7 @@
+<script setup lang="ts">
+// Static maintenance page — no logic needed
+</script>
+
 <template>
   <div class="upgrade-page">
     <div class="upgrade-card">
@@ -49,14 +53,15 @@
   opacity: 0.9;
 }
 
-h1 {
+.upgrade-card h1 {
+  margin: 0 0 10px;
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  margin-bottom: 10px;
 }
 
-p {
+.upgrade-card p {
+  margin: 0;
   font-size: 15px;
   opacity: 0.75;
   line-height: 1.6;

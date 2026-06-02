@@ -1,6 +1,12 @@
-import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch, type Ref } from 'vue';
 import Quill from 'quill';
 import { registerEdmBlots, setEdmUrlResolvers } from '../quill/edmBlots';
+import {
+  getBlotName,
+  getErrorMessage,
+  inferUploadKind,
+  resolveEdmUrl,
+} from '../utils/helpers';
 import type {
   EdmAttachment,
   EdmEmbedValue,
@@ -49,9 +55,9 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   const fileInputRef = ref<HTMLInputElement | null>(null);
 
   // ---- state ----
-  const uploadingKind = ref<EdmUploadKind | null>(null);
-  const errorMessage = ref('');
-  const lastHtml = ref('');
+  const uploadingKind = shallowRef<EdmUploadKind | null>(null);
+  const errorMessage = shallowRef('');
+  const lastHtml = shallowRef('');
 
   let quill: Quill | null = null;
   const blockDragStart = (e: DragEvent) => e.preventDefault();
@@ -204,12 +210,6 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     }
   }
 
-  function inferUploadKind(file: File): EdmUploadKind {
-    if (file.type.startsWith('image/')) return 'image';
-    if (file.type.startsWith('video/')) return 'video';
-    return 'file';
-  }
-
   // ---- upload & embed ----
   async function uploadAndInsert(
     file: File,
@@ -249,14 +249,14 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     const downloadUrl =
       result.downloadUrl
       || result.url
-      || (await resolveUrl(props.resolveDownloadUrl, result.edmId, kind, result));
+      || (await resolveEdmUrl(props.resolveDownloadUrl, result.edmId, kind, result));
 
     const previewUrl =
       kind === 'file'
         ? downloadUrl
         : result.previewUrl
           || result.url
-          || (await resolveUrl(props.resolvePreviewUrl, result.edmId, kind, result));
+          || (await resolveEdmUrl(props.resolvePreviewUrl, result.edmId, kind, result));
 
     return {
       edmId: result.edmId,
@@ -266,27 +266,6 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       mimeType: result.mimeType || file.type,
       size: result.size ?? file.size,
     };
-  }
-
-  function getBlotName(kind: EdmUploadKind): string {
-    if (kind === 'image') return 'edmImage';
-    if (kind === 'video') return 'edmVideo';
-    return 'edmFile';
-  }
-
-  // ---- URL resolution ----
-  async function resolveUrl(
-    resolver: EdmUrlResolver | undefined,
-    edmId: string,
-    kind: EdmUploadKind,
-    result: EdmUploadResult,
-  ): Promise<string> {
-    if (resolver) {
-      const attachmentId = result.attachmentId != null ? String(result.attachmentId) : '';
-      return resolver(attachmentId, edmId, kind, result);
-    }
-    const id = result.attachmentId ?? edmId;
-    return `/api/edm/${encodeURIComponent(String(id))}/download`;
   }
 
   // ---- embed refresh (loaded content) ----
@@ -309,7 +288,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
 
         if (kind === 'file') {
           const attachmentIdRaw = el.getAttribute('data-attachment-id');
-          const url = await resolveUrl(
+          const url = await resolveEdmUrl(
             props.resolveDownloadUrl,
             edmId,
             kind,
@@ -386,10 +365,6 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       return html + '<p><br></p>';
     }
     return html;
-  }
-
-  function getErrorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : '上传失败';
   }
 
   return {
