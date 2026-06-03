@@ -148,5 +148,6 @@ async function handleFileDownload(event: MouseEvent): Promise<void> {
   line-height: 1.7;
   color: #1f2a37;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 </style>
