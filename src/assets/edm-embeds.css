@@ -141,6 +141,20 @@
   color: #dc2626;
 }
 
+/* ---- Code block ---- */
+pre.ql-syntax {
+  padding: 14px 18px;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  tab-size: 2;
+}
+
 @keyframes edm-shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
