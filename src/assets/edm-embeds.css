@@ -142,7 +142,8 @@
 }
 
 /* ---- Code block ---- */
-pre.ql-syntax {
+.ql-code-block-container,
+.ql-code-block {
   padding: 14px 18px;
   border-radius: 8px;
   background: #1e293b;
@@ -153,6 +154,23 @@ pre.ql-syntax {
   overflow-x: auto;
   white-space: pre-wrap;
   tab-size: 2;
+}
+
+.ql-code-block-container {
+  padding: 8px 0;
+}
+
+.ql-code-block-container .ql-code-block {
+  padding: 6px 18px;
+}
+
+code {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #d63384;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: 0.9em;
 }
 
 @keyframes edm-shimmer {
