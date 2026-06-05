@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import 'quill/dist/quill.snow.css';
+
 import { nextTick, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue';
 import { isUnresolvedUrl, resolveEdmUrl } from '../utils/helpers';
 import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../types/edm';
@@ -140,7 +142,9 @@ async function handleFileDownload(event: MouseEvent): Promise<void> {
 </script>
 
 <template>
-  <div ref="containerRef" class="edm-content" v-html="content" @click="handleFileDownload"></div>
+  <div ref="containerRef" class="edm-content ql-snow" @click="handleFileDownload">
+    <div class="ql-editor" v-html="content"></div>
+  </div>
 </template>
 
 <style scoped>
