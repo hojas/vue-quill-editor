@@ -1,6 +1,7 @@
 import Quill from 'quill';
 import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../types/edm';
 import { defaultEdmUrl, isUnresolvedUrl } from '../utils/helpers';
+import { attachResizeHandles } from './imageResize';
 
 // ============================================================
 // Lazy loading — IntersectionObserver + resolver
@@ -162,6 +163,14 @@ function mediaBlotValue(node: HTMLElement): EdmEmbedValue {
     const dataSrc = target.dataset.src;
     if (dataSrc) val.url = dataSrc;
   }
+  // Read image dimensions from inline styles.
+  const media = node.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
+  if (media) {
+    const w = parseInt(media.style.width, 10);
+    const h = parseInt(media.style.height, 10);
+    if (Number.isFinite(w)) val.width = w;
+    if (Number.isFinite(h)) val.height = h;
+  }
   return val;
 }
 
@@ -180,6 +189,13 @@ function createMediaBlot(
   media.dataset.src = sanitizeResourceUrl(normalizedValue.url);
   if (kind === 'image') {
     media.setAttribute('alt', normalizedValue.name || 'uploaded image');
+    if (normalizedValue.width) {
+      media.style.width = `${normalizedValue.width}px`;
+      media.style.maxWidth = 'none';
+    }
+    if (normalizedValue.height) {
+      media.style.height = `${normalizedValue.height}px`;
+    }
   } else {
     media.setAttribute('controls', 'controls');
     media.setAttribute('preload', 'metadata');
@@ -188,6 +204,10 @@ function createMediaBlot(
   setCommonAttributes(media, normalizedValue, kind);
   node.classList.add('ql-edm-loading');
   node.append(media);
+
+  if (kind === 'image') {
+    attachResizeHandles(node);
+  }
 
   getLazyObserver().observe(node);
   return node;

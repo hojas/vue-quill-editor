@@ -7,12 +7,14 @@
 /* ---- Image embed ---- */
 .ql-edm-image {
   display: block;
+  width: fit-content;
   max-width: 100%;
   height: auto;
   margin: 14px 0;
   border: 1px solid #e1e7ef;
   border-radius: 8px;
   background: #f7fafc;
+  position: relative;
 }
 
 .ql-edm-image img {
@@ -21,6 +23,29 @@
   height: auto;
   border-radius: 8px;
 }
+
+/* ---- Image resize handles ---- */
+.ql-edm-image .ql-edm-resize-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #06c;
+  border: 2px solid #fff;
+  border-radius: 2px;
+  z-index: 2;
+}
+
+/* Corner handles */
+.ql-edm-image .ql-edm-resize-nw { top: -4px; left: -4px; }
+.ql-edm-image .ql-edm-resize-ne { top: -4px; right: -4px; }
+.ql-edm-image .ql-edm-resize-se { bottom: -4px; right: -4px; }
+.ql-edm-image .ql-edm-resize-sw { bottom: -4px; left: -4px; }
+
+/* Edge handles */
+.ql-edm-image .ql-edm-resize-n  { top: -4px; left: calc(50% - 4px); }
+.ql-edm-image .ql-edm-resize-e  { top: calc(50% - 4px); right: -4px; }
+.ql-edm-image .ql-edm-resize-s  { bottom: -4px; left: calc(50% - 4px); }
+.ql-edm-image .ql-edm-resize-w  { top: calc(50% - 4px); left: -4px; }
 
 /* ---- Video embed ---- */
 .ql-edm-video {

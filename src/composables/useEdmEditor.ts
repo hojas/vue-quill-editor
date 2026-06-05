@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch, type Ref } from 'vue';
 import Quill from 'quill';
 import { registerEdmBlots, setEdmUrlResolvers } from '../quill/edmBlots';
+import { initImageResize, removeAllResizeHandles } from '../quill/imageResize';
 import {
   getBlotName,
   getErrorMessage,
@@ -102,6 +103,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     });
 
     addToolbarTitles();
+    initImageResize(quill.root);
     quill.on('text-change', syncHtmlFromEditor);
     quill.root.addEventListener('paste', handlePaste);
     quill.root.addEventListener('dragstart', blockDragStart);
@@ -358,7 +360,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   }
 
   function getEditorHtml(): string {
-    const html = quill?.root.innerHTML || '';
+    if (!quill) return '';
+    // Clone the root and remove resize handles so they don't leak into HTML output.
+    const clone = quill.root.cloneNode(true) as HTMLElement;
+    removeAllResizeHandles(clone);
+    const html = clone.innerHTML;
     // 末尾如果是 EDM embed，多补一个 <p><br></p>，
     // 防止保存后重新加载时唯一一个末尾段落被 Quill 当结构换行符合并。
     if (/<\/edm-(?:image|video|file)>(?:<\/p>)?\s*$/.test(html.trimEnd())) {

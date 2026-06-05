@@ -52,6 +52,10 @@ export interface EdmEmbedValue {
   mimeType?: string;
   /** 文件大小（字节） */
   size?: number;
+  /** 图片宽度（像素），仅 image 类型有效 */
+  width?: number;
+  /** 图片高度（像素），仅 image 类型有效 */
+  height?: number;
 }
 
 /**
