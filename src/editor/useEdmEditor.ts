@@ -476,9 +476,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   function syncHtmlFromEditor(): void {
     const html = getEditorHtml();
     lastHtml.value = html;
+    const attachments = extractAttachments();
+    uploadedCount.value = attachments.length; // 同步实际嵌入数量
     emit('update:modelValue', html);
     emit('change', html);
-    emit('update:attachmentList', extractAttachments());
+    emit('update:attachmentList', attachments);
   }
 
   /**
