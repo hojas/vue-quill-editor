@@ -2,8 +2,8 @@
 import 'quill/dist/quill.snow.css';
 
 import { nextTick, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue';
-import { downloadFile, resolveEdmUrl } from '../shared/utils';
-import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../shared/types';
+import { downloadFile } from '../shared/utils';
+import type { EdmUploadKind, EdmUrlResolver } from '../shared/types';
 
 const props = defineProps<{
   content: string;
@@ -87,18 +87,18 @@ async function refreshEmbeds(): Promise<void> {
       const kind = el.getAttribute('data-edm-type') as EdmUploadKind;
       if (!edmId || !kind) return;
 
-      const attachmentIdRaw = el.getAttribute('data-attachment-id');
-      const dummyResult: EdmUploadResult = {
-        edmId,
-        attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined,
-      };
+      const attachmentIdRaw = el.getAttribute('data-attachment-id') || '';
 
       if (kind === 'file') {
         const link = el.querySelector('a');
         if (!link) return;
         // 已有有效 href 则跳过
         if (link.getAttribute('href') && link.getAttribute('href') !== '#') return;
-        const url = await resolveEdmUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
+        const url = (await props.resolveDownloadUrl?.(
+          attachmentIdRaw || '',
+          edmId,
+          kind,
+        )) || '';
         if (url) link.setAttribute('href', url);
       } else {
         const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
@@ -111,7 +111,11 @@ async function refreshEmbeds(): Promise<void> {
           return;
         }
 
-        const url = await resolveEdmUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
+        const url = (await props.resolveDownloadUrl?.(
+          attachmentIdRaw || '',
+          edmId,
+          kind,
+        )) || '';
         if (!url) return;
         media.dataset.src = url;
         el.classList.add('ql-edm-loading');

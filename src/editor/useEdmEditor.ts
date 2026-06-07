@@ -6,7 +6,6 @@ import {
   getBlotName,
   getErrorMessage,
   inferUploadKind,
-  resolveEdmUrl,
 } from '../shared/utils';
 import type {
   EdmAttachment,
@@ -344,7 +343,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     const url =
       result.downloadUrl
       || result.url
-      || (await resolveEdmUrl(props.resolveDownloadUrl, result.edmId, kind, result));
+      || (await props.resolveDownloadUrl?.('', result.edmId, kind, result))
+      || '';
 
     return {
       edmId: result.edmId,
@@ -377,12 +377,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
         if (kind === 'file') {
           // 文件类型：解析下载 URL 并更新链接
           const attachmentIdRaw = el.getAttribute('data-attachment-id');
-          const url = await resolveEdmUrl(
-            props.resolveDownloadUrl,
+          const url = (await props.resolveDownloadUrl?.(
+            attachmentIdRaw || '',
             edmId,
             kind,
-            { edmId, attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined },
-          );
+          )) || '';
           const link = el.querySelector('a');
           if (link) link.setAttribute('href', url);
         } else {
