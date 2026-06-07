@@ -29,7 +29,6 @@ export interface UseEdmEditorProps {
   placeholder: string;
   readOnly: boolean;
   upload: EdmUploadHandler;
-  resolvePreviewUrl?: EdmUrlResolver;
   resolveDownloadUrl?: EdmUrlResolver;
   imageAccept: string;
   videoAccept: string;
@@ -112,7 +111,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   // ---- lifecycle ----
   onMounted(async () => {
     registerEdmBlots();
-    setEdmUrlResolvers(props.resolvePreviewUrl);
+    setEdmUrlResolvers(props.resolveDownloadUrl);
     if (!editorRef.value) return;
 
     // 初始化 Quill 实例
@@ -308,29 +307,21 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
    * 根据上传结果构建写入 blot 的 EdmEmbedValue。
    *
    * URL 优先级：result 中直接携带的 URL → 通过 resolver 解析。
-   * 文件类型的 previewUrl 直接复用 downloadUrl。
    */
   async function buildEmbedValue(
     file: File,
     kind: EdmUploadKind,
     result: EdmUploadResult,
   ): Promise<EdmEmbedValue> {
-    const downloadUrl =
+    const url =
       result.downloadUrl
       || result.url
       || (await resolveEdmUrl(props.resolveDownloadUrl, result.edmId, kind, result));
 
-    const previewUrl =
-      kind === 'file'
-        ? downloadUrl
-        : result.previewUrl
-          || result.url
-          || (await resolveEdmUrl(props.resolvePreviewUrl, result.edmId, kind, result));
-
     return {
       edmId: result.edmId,
       attachmentId: result.attachmentId,
-      url: kind === 'file' ? downloadUrl : previewUrl || downloadUrl,
+      url,
       name: result.fileName || file.name,
       mimeType: result.mimeType || file.type,
       size: result.size ?? file.size,

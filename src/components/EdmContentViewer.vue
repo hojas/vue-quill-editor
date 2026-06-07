@@ -2,12 +2,11 @@
 import 'quill/dist/quill.snow.css';
 
 import { nextTick, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue';
-import { downloadFile, isUnresolvedUrl, resolveEdmUrl } from '../utils/helpers';
+import { downloadFile, resolveEdmUrl } from '../utils/helpers';
 import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../types/edm';
 
 const props = defineProps<{
   content: string;
-  resolvePreviewUrl?: EdmUrlResolver;
   resolveDownloadUrl?: EdmUrlResolver;
 }>();
 
@@ -96,22 +95,24 @@ async function refreshEmbeds(): Promise<void> {
 
       if (kind === 'file') {
         const link = el.querySelector('a');
-        if (link && link.getAttribute('href') && !isUnresolvedUrl(link.getAttribute('href')!)) return;
-        const url = await resolveEdmUrl(props.resolveDownloadUrl, edmId, kind, dummyResult, 'download');
-        if (link) link.setAttribute('href', url);
+        if (!link) return;
+        // 已有有效 href 则跳过
+        if (link.getAttribute('href') && link.getAttribute('href') !== '#') return;
+        const url = await resolveEdmUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
+        if (url) link.setAttribute('href', url);
       } else {
         const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
         if (!media) return;
 
-        // Already resolved URL — observe for lazy load
-        if (media.dataset.src && !isUnresolvedUrl(media.dataset.src)) {
+        // 已有 data-src 则跳过重复解析
+        if (media.dataset.src) {
           el.classList.add('ql-edm-loading');
           getViewObserver().observe(el);
           return;
         }
 
-        const previewUrl = await resolveEdmUrl(props.resolvePreviewUrl, edmId, kind, dummyResult, 'preview');
-        const url = previewUrl || (await resolveEdmUrl(props.resolveDownloadUrl, edmId, kind, dummyResult, 'download'));
+        const url = await resolveEdmUrl(props.resolveDownloadUrl, edmId, kind, dummyResult);
+        if (!url) return;
         media.dataset.src = url;
         el.classList.add('ql-edm-loading');
         getViewObserver().observe(el);

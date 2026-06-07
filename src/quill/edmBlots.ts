@@ -1,6 +1,6 @@
 import Quill from 'quill';
 import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../types/edm';
-import { defaultEdmUrl, downloadFile, isUnresolvedUrl } from '../utils/helpers';
+import { downloadFile } from '../utils/helpers';
 import { attachResizeHandles } from './imageResize';
 
 // ============================================================
@@ -9,8 +9,8 @@ import { attachResizeHandles } from './imageResize';
 
 /** 编辑器内的懒加载观察器（单例） */
 let lazyObserver: IntersectionObserver | null = null;
-/** 外部注入的预览 URL 解析器，在图片/视频进入视口时调用 */
-let resolvePreviewUrlResolver: EdmUrlResolver | undefined;
+/** 外部注入的下载 URL 解析器，在图片/视频进入视口时调用 */
+let resolveUrlResolver: EdmUrlResolver | undefined;
 
 /**
  * 注入 URL 解析器，供懒加载时调用。
@@ -18,7 +18,7 @@ let resolvePreviewUrlResolver: EdmUrlResolver | undefined;
  * 由 `useEdmEditor` 在 onMounted 中调用一次。
  */
 export function setEdmUrlResolvers(resolver?: EdmUrlResolver): void {
-  resolvePreviewUrlResolver = resolver;
+  resolveUrlResolver = resolver;
 }
 
 /**
@@ -45,10 +45,10 @@ function getLazyObserver(): IntersectionObserver {
 }
 
 /**
- * 为图片/视频元素加载真实的预览 URL。
+ * 为图片/视频元素加载展示 URL。
  *
- * 通过外部 resolver 解析 src，成功后写入 media.src 并切换 CSS 状态类。
- * 解析失败或缺少必要参数时进入 error 状态。
+ * 通过外部注入的 `resolveUrlResolver` 获取真实 URL，
+ * 写入 media.src 并切换 CSS 状态类。无 resolver 时进入 error 状态。
  */
 async function loadMedia(
   el: HTMLElement,
@@ -57,7 +57,7 @@ async function loadMedia(
   const edmId = media.dataset.edmId || el.getAttribute('data-edm-id') || '';
   const kind = (el.getAttribute('data-edm-type') as EdmUploadKind) || 'image';
 
-  if (!resolvePreviewUrlResolver || !edmId) {
+  if (!resolveUrlResolver || !edmId) {
     el.classList.remove('ql-edm-loading');
     el.classList.add('ql-edm-error');
     return;
@@ -66,21 +66,29 @@ async function loadMedia(
   try {
     const attachmentId =
       media.dataset.attachmentId || el.getAttribute('data-attachment-id') || '';
-    const src = await resolvePreviewUrlResolver(attachmentId, edmId, kind);
+    const src = await resolveUrlResolver(attachmentId, edmId, kind);
     if (!src) throw new Error('empty url');
-    media.onload = media.onloadedmetadata = () => {
-      el.classList.remove('ql-edm-loading');
-      el.classList.add('ql-edm-loaded');
-    };
-    media.onerror = () => {
-      el.classList.remove('ql-edm-loading');
-      el.classList.add('ql-edm-error');
-    };
+    setMediaHandlers(el, media);
     media.src = src;
   } catch {
     el.classList.remove('ql-edm-loading');
     el.classList.add('ql-edm-error');
   }
+}
+
+/** 绑定媒体加载成功/失败的状态切换 */
+function setMediaHandlers(
+  el: HTMLElement,
+  media: HTMLImageElement | HTMLVideoElement,
+): void {
+  media.onload = media.onloadedmetadata = () => {
+    el.classList.remove('ql-edm-loading');
+    el.classList.add('ql-edm-loaded');
+  };
+  media.onerror = () => {
+    el.classList.remove('ql-edm-loading');
+    el.classList.add('ql-edm-error');
+  };
 }
 
 // ============================================================
@@ -115,12 +123,12 @@ function sanitizeResourceUrl(url: string): string {
  */
 function normalizeValue(value: EdmEmbedValue | string): EdmEmbedValue {
   if (typeof value === 'string') {
-    return { edmId: value, url: defaultEdmUrl(value) };
+    return { edmId: value, url: '' };
   }
   return {
     edmId: value.edmId,
     attachmentId: value.attachmentId,
-    url: value.url || defaultEdmUrl(value.edmId, value.attachmentId),
+    url: value.url || '',
     name: value.name,
     mimeType: value.mimeType,
     size: value.size,
@@ -172,14 +180,10 @@ function readCommonValue(root: HTMLElement, urlAttribute: 'src' | 'href'): EdmEm
   const edmId = target.getAttribute('data-edm-id') || root.getAttribute('data-edm-id') || '';
   const attachmentIdRaw =
     target.getAttribute('data-attachment-id') || root.getAttribute('data-attachment-id');
-  const fallbackUrl = edmId
-    ? defaultEdmUrl(edmId, attachmentIdRaw ? Number(attachmentIdRaw) : undefined)
-    : '';
-
   return {
     edmId,
     attachmentId: attachmentIdRaw ? Number(attachmentIdRaw) : undefined,
-    url: target.getAttribute(urlAttribute) || fallbackUrl,
+    url: target.getAttribute(urlAttribute) || '',
     name:
       target.getAttribute('data-file-name') ||
       root.getAttribute('data-file-name') ||
@@ -207,8 +211,8 @@ const BlockEmbed = Quill.import('blots/block/embed') as any;
  */
 function mediaBlotValue(node: HTMLElement): EdmEmbedValue {
   const val = readCommonValue(node, 'src');
-  if (!val.url || isUnresolvedUrl(val.url)) {
-    // 如果 href/src 还是默认 API URL，尝试从 data-src 读取已解析的真实 URL
+  if (!val.url) {
+    // URL 未存储时，尝试从 data-src 读取
     const target = findEdmTarget(node) || node;
     const dataSrc = target.dataset.src;
     if (dataSrc) val.url = dataSrc;

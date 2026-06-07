@@ -38,29 +38,8 @@ export function getBlotName(kind: EdmUploadKind): string {
 }
 
 // ============================================================
-// URL 构建与解析
+// 下载工具
 // ============================================================
-
-/**
- * 判断 URL 是否为尚未解析的默认 EDM 路径。
- *
- * 以 `/api/edm/` 开头的 URL 需要通过 `resolveEdmUrl` 解析后才可用。
- */
-export function isUnresolvedUrl(url: string): boolean {
-  return url.startsWith('/api/edm/');
-}
-
-/**
- * 根据 EDM ID 拼装默认的 API URL。
- *
- * @param edmId         - EDM 资源 ID
- * @param attachmentId  - 可选的附件 ID，优先使用
- * @param action        - 操作类型：`download` / `preview`
- */
-export function defaultEdmUrl(edmId: string, attachmentId?: number, action = 'download'): string {
-  const id = attachmentId ?? edmId;
-  return `/api/edm/${encodeURIComponent(String(id))}/${action}`;
-}
 
 /**
  * 通过 fetch → blob → 创建临时链接的方式触发浏览器下载。
@@ -88,28 +67,29 @@ export async function downloadFile(url: string, fileName: string): Promise<void>
   }
 }
 
+// ============================================================
+// URL 解析
+// ============================================================
+
 /**
- * 解析 EDM 资源的真实 URL。
+ * 通过外部注入的 resolver 解析 EDM 资源的展示/下载 URL。
  *
- * 优先调用外部传入的 `resolver`，无 resolver 时回退到 `defaultEdmUrl`。
+ * 组件自身不拼接 URL，完全由消费方控制。无 resolver 时返回空字符串。
  *
  * @param resolver - 外部注入的解析函数
  * @param edmId    - EDM 资源 ID
  * @param kind     - 资源类型
  * @param result   - 上传结果（含 attachmentId 等信息）
- * @param action   - 解析目标：`preview` 或 `download`
  */
 export async function resolveEdmUrl(
   resolver: EdmUrlResolver | undefined,
   edmId: string,
   kind: EdmUploadKind,
   result?: EdmUploadResult,
-  action: 'preview' | 'download' = 'download',
 ): Promise<string> {
   if (resolver) {
     const attachmentId = result?.attachmentId != null ? String(result.attachmentId) : '';
     return resolver(attachmentId, edmId, kind, result);
   }
-  const id = result?.attachmentId ?? edmId;
-  return defaultEdmUrl(String(id), undefined, action);
+  return '';
 }

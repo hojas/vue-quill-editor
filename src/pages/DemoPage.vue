@@ -3,21 +3,21 @@ import { ref } from 'vue';
 import type { EdmAttachment, EdmUploadKind } from '../types/edm';
 import RichTextEditor from '../components/RichTextEditor.vue';
 import EdmContentViewer from '../components/EdmContentViewer.vue';
-import { resolveMockEdmUrl, uploadToMockEdm } from '../services/mockEdmApi';
+import { uploadToEdm } from '../services/edmApi';
 
 /** 编辑器内容（HTML） */
 const content = ref('<p>欢迎编辑 EDM 内容。</p>');
 /** 编辑器中已使用的 EDM 附件列表 */
 const attachments = ref<EdmAttachment[]>([]);
 
-/** 对接 mock 上传接口 */
+/** 对接后端上传接口 POST /api/edm/upload */
 async function uploadEdm(file: File, kind: EdmUploadKind) {
-  return uploadToMockEdm(file, kind);
+  return uploadToEdm(file, kind);
 }
 
-/** 对接 mock URL 解析接口 */
-async function resolveEdmUrl(attachmentId: string, edmId: string): Promise<string> {
-  return resolveMockEdmUrl(attachmentId || edmId);
+/** 对接后端下载接口，返回可展示的 URL */
+async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise<string> {
+  return `/api/edm/${encodeURIComponent(edmId)}/download`;
 }
 </script>
 
@@ -35,8 +35,7 @@ async function resolveEdmUrl(attachmentId: string, edmId: string): Promise<strin
           v-model="content"
           v-model:attachment-list="attachments"
           :upload="uploadEdm"
-          :resolve-preview-url="resolveEdmUrl"
-          :resolve-download-url="resolveEdmUrl"
+          :resolve-download-url="resolveDownloadUrl"
         />
       </section>
 
@@ -45,8 +44,7 @@ async function resolveEdmUrl(attachmentId: string, edmId: string): Promise<strin
         <EdmContentViewer
           class="app-preview"
           :content="content"
-          :resolve-preview-url="resolveEdmUrl"
-          :resolve-download-url="resolveEdmUrl"
+          :resolve-download-url="resolveDownloadUrl"
         />
       </section>
     </div>

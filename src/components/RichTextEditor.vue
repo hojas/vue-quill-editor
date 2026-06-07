@@ -26,9 +26,7 @@ const props = withDefaults(
     readOnly?: boolean;
     /** 文件上传函数，接受 File + kind 返回 EdmUploadResult */
     upload: EdmUploadHandler;
-    /** 预览 URL 解析器（图片/视频） */
-    resolvePreviewUrl?: EdmUrlResolver;
-    /** 下载 URL 解析器 */
+    /** 下载/展示 URL 解析器（图片/视频/文件） */
     resolveDownloadUrl?: EdmUrlResolver;
     /** 图片上传 accept 属性 */
     imageAccept?: string;
