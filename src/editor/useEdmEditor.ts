@@ -280,16 +280,19 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
    */
   async function insertFiles(files: File[], forcedKind?: EdmUploadKind): Promise<void> {
     if (!quill || props.readOnly) return;
-    // 不超过上传上限
+    // 同步预占位，防止快速连续粘贴绕过限制
     const remaining = maxCount.value - uploadedCount.value;
     if (remaining <= 0) return;
+    const toUpload = files.slice(0, remaining);
+    uploadedCount.value += toUpload.length;
     // 在光标位置处插入；无选区时插入到文档末尾
     let insertIndex = quill.getSelection(true)?.index ?? Math.max(quill.getLength() - 1, 0);
-    for (const file of files.slice(0, remaining)) {
+    for (const file of toUpload) {
       const kind = forcedKind || inferUploadKind(file);
       try {
         insertIndex = await uploadAndInsert(file, kind, insertIndex);
       } catch {
+        uploadedCount.value--; // 失败则释放占位
         continue;
       }
     }
@@ -319,7 +322,6 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       const embedValue = await buildEmbedValue(file, kind, result);
       quill.insertEmbed(insertIndex, getBlotName(kind), embedValue, 'user');
       quill.setSelection(insertIndex + 1, 0, 'silent');
-      uploadedCount.value++;
       syncHtmlFromEditor();
       emit('upload-success', { file, kind, result });
       return insertIndex + 1;
