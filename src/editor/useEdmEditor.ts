@@ -149,7 +149,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     addToolbarTitles();
     initImageResize(quill.root);
     quill.on('text-change', syncHtmlFromEditor);
-    quill.root.addEventListener('paste', handlePaste);
+    quill.root.addEventListener('paste', handlePaste, true);
     quill.root.addEventListener('dragstart', blockDragStart);
     quill.root.addEventListener('dragover', blockDragOver, true);
     quill.root.addEventListener('drop', blockDrop, true);
@@ -165,7 +165,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   onBeforeUnmount(() => {
     if (!quill) return;
     quill.off('text-change', syncHtmlFromEditor);
-    quill.root.removeEventListener('paste', handlePaste);
+    quill.root.removeEventListener('paste', handlePaste, true);
     quill.root.removeEventListener('dragstart', blockDragStart);
     quill.root.removeEventListener('dragover', blockDragOver, true);
     quill.root.removeEventListener('drop', blockDrop, true);
@@ -397,7 +397,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   function handlePaste(event: ClipboardEvent): void {
     const files = Array.from(event.clipboardData?.files || []);
     if (!files.length) return;
-    event.preventDefault();
+    event.stopImmediatePropagation();
     void insertFiles(files);
   }
 
