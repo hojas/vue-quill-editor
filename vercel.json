@@ -1,0 +1,7 @@
+{
+  "buildCommand": "pnpm install && pnpm build:demo",
+  "outputDirectory": "demo-dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

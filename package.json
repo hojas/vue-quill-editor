@@ -46,6 +46,7 @@
     "vue-tsc": "^3.3.2"
   },
   "dependencies": {
+    "@vercel/blob": "^2.4.0",
     "vue-router": "^5.1.0"
   }
 }
