@@ -1,4 +1,4 @@
-import { saveFile } from '../../lib/blob-storage';
+import { saveFile } from '../_lib/blob-storage';
 
 export const config = {
   api: {

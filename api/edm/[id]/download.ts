@@ -1,4 +1,4 @@
-import { getFile } from '../../../lib/blob-storage';
+import { getFile } from '../../_lib/blob-storage';
 
 export default async function handler(req: import('http').IncomingMessage, res: import('http').ServerResponse) {
   if (req.method !== 'GET') {

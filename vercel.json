@@ -3,13 +3,5 @@
   "outputDirectory": "demo-dist",
   "rewrites": [
     { "source": "/((?!api).*)", "destination": "/index.html" }
-  ],
-  "functions": {
-    "api/edm/upload.ts": {
-      "includeFiles": "lib/**"
-    },
-    "api/edm/[id]/download.ts": {
-      "includeFiles": "lib/**"
-    }
-  }
+  ]
 }
