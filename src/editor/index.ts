@@ -1,6 +1,5 @@
-import '../shared/edm-embeds.css';
-export { default as RichTextEditor } from './RichTextEditor.vue';
-export { registerEdmBlots } from './edmBlots';
+import '../shared/edm-embeds.css'
+
 export type {
   EdmAttachment,
   EdmEmbedValue,
@@ -10,4 +9,6 @@ export type {
   EdmUploadResult,
   EdmUploadSuccessPayload,
   EdmUrlResolver,
-} from '../shared/types';
+} from '../shared/types'
+export { registerEdmBlots } from './edmBlots'
+export { default as RichTextEditor } from './RichTextEditor.vue'

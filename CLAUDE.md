@@ -7,6 +7,8 @@ Vue 3 + Quill 2.0 rich text editor library with EDM (image/video/file) embed ext
 - **Dev**: `pnpm dev` (Vite dev server on 127.0.0.1:5173)
 - **Build**: `pnpm build` (vue-tsc + vite build → dist/)
 - **Build demo**: `pnpm build:demo`
+- **Lint**: `pnpm lint` (ESLint via @antfu/eslint-config)
+- **Lint fix**: `pnpm lint:fix`
 - **Type check**: `npx vue-tsc --project tsconfig.build.json --noEmit`
 - **Server dev**: `cd server && pnpm dev` (Fastify on 127.0.0.1:3001)
 - **Server build**: `cd server && pnpm build`

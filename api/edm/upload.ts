@@ -1,77 +1,83 @@
-import { put } from '@vercel/blob';
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import { Buffer } from 'node:buffer'
+import { put } from '@vercel/blob'
 
-export const config = { api: { bodyParser: false } };
+export const config = { api: { bodyParser: false } }
 
-export default async function handler(req: import('http').IncomingMessage, res: import('http').ServerResponse) {
+export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (req.method !== 'POST') {
-    res.statusCode = 405;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ error: 'Method not allowed' }));
+    res.statusCode = 405
+    res.setHeader('Content-Type', 'application/json')
+    return res.end(JSON.stringify({ error: 'Method not allowed' }))
   }
 
   try {
-    const chunks: Uint8Array[] = [];
+    const chunks: Uint8Array[] = []
     for await (const chunk of req) {
-      chunks.push(chunk);
+      chunks.push(chunk)
     }
-    const body = Buffer.concat(chunks);
+    const body = Buffer.concat(chunks)
 
-    const ct = req.headers['content-type'] || '';
-    const boundary = ct.split('boundary=')[1];
+    const ct = req.headers['content-type'] || ''
+    const boundary = ct.split('boundary=')[1]
     if (!boundary) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: '需要 multipart/form-data' }));
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      return res.end(JSON.stringify({ error: '需要 multipart/form-data' }))
     }
 
-    const filePart = extractFile(body, boundary);
+    const filePart = extractFile(body, boundary)
     if (!filePart) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: '未找到上传文件' }));
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      return res.end(JSON.stringify({ error: '未找到上传文件' }))
     }
 
     // 保存到 Vercel Blob，返回 URL 供前端直接使用
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    const mimeType = filePart.contentType || 'application/octet-stream';
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    const mimeType = filePart.contentType || 'application/octet-stream'
     const blob = await put(id, Buffer.from(filePart.data), {
       access: 'public',
       contentType: mimeType,
-    });
+    })
 
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
+    res.statusCode = 200
+    res.setHeader('Content-Type', 'application/json')
     return res.end(JSON.stringify({
       edmId: id,
-      attachmentId: parseInt(id.split('-')[0], 10),
+      attachmentId: Number.parseInt(id.split('-')[0], 10),
       url: blob.url,
       fileName: filePart.filename || 'download',
       mimeType,
       size: filePart.data.length,
-    }));
-  } catch (err) {
-    console.error('upload error:', err);
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ error: err instanceof Error ? err.message : '上传失败' }));
+    }))
+  }
+  catch (err) {
+    console.error('upload error:', err)
+    res.statusCode = 500
+    res.setHeader('Content-Type', 'application/json')
+    return res.end(JSON.stringify({ error: err instanceof Error ? err.message : '上传失败' }))
   }
 }
 
-function extractFile(body: Buffer, boundary: string): { filename?: string; contentType?: string; data: Uint8Array } | null {
-  const B = Buffer.from(`--${boundary}`);
-  const NL = Buffer.from('\r\n\r\n');
-  const start = body.indexOf(B);
-  if (start === -1) return null;
-  const headerStart = start + B.length + 2;
-  const headerEnd = body.indexOf(NL, headerStart);
-  if (headerEnd === -1) return null;
-  const headerText = body.subarray(headerStart, headerEnd).toString();
-  const dataStart = headerEnd + NL.length;
-  const nextBoundary = body.indexOf(B, dataStart);
-  if (nextBoundary === -1) return null;
+function extractFile(body: Buffer, boundary: string): { filename?: string, contentType?: string, data: Uint8Array } | null {
+  const B = Buffer.from(`--${boundary}`)
+  const NL = Buffer.from('\r\n\r\n')
+  const start = body.indexOf(B)
+  if (start === -1)
+    return null
+  const headerStart = start + B.length + 2
+  const headerEnd = body.indexOf(NL, headerStart)
+  if (headerEnd === -1)
+    return null
+  const headerText = body.subarray(headerStart, headerEnd).toString()
+  const dataStart = headerEnd + NL.length
+  const nextBoundary = body.indexOf(B, dataStart)
+  if (nextBoundary === -1)
+    return null
   return {
     filename: headerText.match(/filename="([^"]*)"/)?.[1],
     contentType: headerText.match(/Content-Type:\s*(\S+)/i)?.[1],
     data: body.subarray(dataStart, nextBoundary - 2),
-  };
+  }
 }

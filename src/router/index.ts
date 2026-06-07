@@ -1,6 +1,6 @@
-import { createRouter, createWebHashHistory } from 'vue-router';
-import DemoPage from '../pages/DemoPage.vue';
-import UpgradePage from '../pages/UpgradePage.vue';
+import { createRouter, createWebHashHistory } from 'vue-router'
+import DemoPage from '../pages/DemoPage.vue'
+import UpgradePage from '../pages/UpgradePage.vue'
 
 export default createRouter({
   history: createWebHashHistory(),
@@ -8,4 +8,4 @@ export default createRouter({
     { path: '/', name: 'demo', component: DemoPage },
     { path: '/upgrade', name: 'upgrade', component: UpgradePage },
   ],
-});
+})

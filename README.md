@@ -55,6 +55,29 @@ API 端点：
 ### 使用编辑器
 
 ```vue
+<script setup lang="ts">
+import type { EdmUploadKind, EdmUploadResult } from 'vue-quill-editor-edm'
+import { RichTextEditor } from 'vue-quill-editor-edm'
+import 'vue-quill-editor-edm/dist/vue-quill-editor-edm.css'
+import 'quill/dist/quill.snow.css'
+
+const content = ref('')
+
+async function handleUpload(file: File, kind: EdmUploadKind): Promise<EdmUploadResult> {
+  const form = new FormData()
+  form.append('file', file)
+
+  const res = await fetch('/api/edm/upload', { method: 'POST', body: form })
+  if (!res.ok)
+    throw new Error('上传失败')
+  return res.json()
+}
+
+function resolveDownloadUrl(_attachmentId: string, edmId: string): string {
+  return `/api/edm/${encodeURIComponent(edmId)}/download`
+}
+</script>
+
 <template>
   <RichTextEditor
     v-model="content"
@@ -62,47 +85,25 @@ API 端点：
     :resolve-download-url="resolveDownloadUrl"
   />
 </template>
-
-<script setup lang="ts">
-import { RichTextEditor } from 'vue-quill-editor-edm';
-import 'vue-quill-editor-edm/dist/vue-quill-editor-edm.css';
-import 'quill/dist/quill.snow.css';
-import type { EdmUploadKind, EdmUploadResult } from 'vue-quill-editor-edm';
-
-const content = ref('');
-
-async function handleUpload(file: File, kind: EdmUploadKind): Promise<EdmUploadResult> {
-  const form = new FormData();
-  form.append('file', file);
-
-  const res = await fetch('/api/edm/upload', { method: 'POST', body: form });
-  if (!res.ok) throw new Error('上传失败');
-  return res.json();
-}
-
-function resolveDownloadUrl(_attachmentId: string, edmId: string): string {
-  return `/api/edm/${encodeURIComponent(edmId)}/download`;
-}
-</script>
 ```
 
 ### 使用预览组件
 
 ```vue
+<script setup lang="ts">
+import { EdmContentViewer } from 'vue-quill-editor-edm'
+
+function resolveDownloadUrl(_attachmentId: string, edmId: string): string {
+  return `/api/edm/${encodeURIComponent(edmId)}/download`
+}
+</script>
+
 <template>
   <EdmContentViewer
     :content="html"
     :resolve-download-url="resolveDownloadUrl"
   />
 </template>
-
-<script setup lang="ts">
-import { EdmContentViewer } from 'vue-quill-editor-edm';
-
-function resolveDownloadUrl(_attachmentId: string, edmId: string): string {
-  return `/api/edm/${encodeURIComponent(edmId)}/download`;
-}
-</script>
 ```
 
 ## API
@@ -141,34 +142,34 @@ function resolveDownloadUrl(_attachmentId: string, edmId: string): string {
 ### 类型
 
 ```ts
-type EdmUploadKind = 'image' | 'video' | 'file';
+type EdmUploadKind = 'image' | 'video' | 'file'
 
 interface EdmUploadResult {
-  edmId: string;
-  attachmentId?: number;
-  downloadUrl?: string;
-  url?: string;
-  fileName?: string;
-  mimeType?: string;
-  size?: number;
+  edmId: string
+  attachmentId?: number
+  downloadUrl?: string
+  url?: string
+  fileName?: string
+  mimeType?: string
+  size?: number
 }
 
 type EdmUploadHandler = (
   file: File,
   kind: EdmUploadKind,
-) => Promise<EdmUploadResult>;
+) => Promise<EdmUploadResult>
 
 type EdmUrlResolver = (
   attachmentId: string,
   edmId: string,
   kind: EdmUploadKind,
   result?: EdmUploadResult,
-) => string | Promise<string>;
+) => string | Promise<string>
 
 interface EdmAttachment {
-  edmId: string;
-  attachmentId?: number;
-  kind: EdmUploadKind;
+  edmId: string
+  attachmentId?: number
+  kind: EdmUploadKind
 }
 ```
 
@@ -192,9 +193,9 @@ interface EdmAttachment {
 ## 手动注册 Blot
 
 ```ts
-import { registerEdmBlots } from 'vue-quill-editor-edm';
+import { registerEdmBlots } from 'vue-quill-editor-edm'
 
-registerEdmBlots();
+registerEdmBlots()
 ```
 
 ## 复制到其他项目

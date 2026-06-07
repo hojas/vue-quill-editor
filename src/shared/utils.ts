@@ -1,4 +1,4 @@
-import type { EdmUploadKind } from './types';
+import type { EdmUploadKind } from './types'
 
 // ============================================================
 // 类型与 Blot 工具函数
@@ -11,9 +11,11 @@ import type { EdmUploadKind } from './types';
  * @returns `image` / `video` / `file`
  */
 export function inferUploadKind(file: File): EdmUploadKind {
-  if (file.type.startsWith('image/')) return 'image';
-  if (file.type.startsWith('video/')) return 'video';
-  return 'file';
+  if (file.type.startsWith('image/'))
+    return 'image'
+  if (file.type.startsWith('video/'))
+    return 'video'
+  return 'file'
 }
 
 /**
@@ -22,7 +24,7 @@ export function inferUploadKind(file: File): EdmUploadKind {
  * @param error - 捕获到的错误对象
  */
 export function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '上传失败';
+  return error instanceof Error ? error.message : '上传失败'
 }
 
 /**
@@ -32,9 +34,11 @@ export function getErrorMessage(error: unknown): string {
  * @returns 如 `edmImage`、`edmVideo`、`edmFile`
  */
 export function getBlotName(kind: EdmUploadKind): string {
-  if (kind === 'image') return 'edmImage';
-  if (kind === 'video') return 'edmVideo';
-  return 'edmFile';
+  if (kind === 'image')
+    return 'edmImage'
+  if (kind === 'video')
+    return 'edmVideo'
+  return 'edmFile'
 }
 
 // ============================================================
@@ -51,19 +55,19 @@ export function getBlotName(kind: EdmUploadKind): string {
  */
 export async function downloadFile(url: string, fileName: string): Promise<void> {
   try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(blobUrl);
-  } catch {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(blobUrl)
+  }
+  catch {
     // fetch 跨域或网络异常时，降级为直接打开
-    window.open(url, '_blank');
+    window.open(url, '_blank')
   }
 }
-

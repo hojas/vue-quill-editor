@@ -1,1 +1,1 @@
-export { default as EdmContentViewer } from './EdmContentViewer.vue';
+export { default as EdmContentViewer } from './EdmContentViewer.vue'

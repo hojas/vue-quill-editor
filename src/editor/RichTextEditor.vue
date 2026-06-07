@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import 'quill/dist/quill.snow.css';
-
-import { useEdmEditor } from './useEdmEditor';
-import type { EdmConfig, UseEdmEditorEmit, UseEdmEditorProps } from './useEdmEditor';
 import type {
   EdmAttachment,
   EdmUploadErrorPayload,
@@ -10,34 +6,38 @@ import type {
   EdmUploadKind,
   EdmUploadSuccessPayload,
   EdmUrlResolver,
-} from '../shared/types';
+} from '../shared/types'
 
-defineOptions({ name: 'RichTextEditor' });
+import type { EdmConfig, UseEdmEditorEmit, UseEdmEditorProps } from './useEdmEditor'
+import { useEdmEditor } from './useEdmEditor'
+import 'quill/dist/quill.snow.css'
+
+defineOptions({ name: 'RichTextEditor' })
 
 // ---- Props & Emits ----
 
 const props = withDefaults(
   defineProps<{
     /** 编辑器 HTML 内容（v-model） */
-    modelValue?: string;
+    modelValue?: string
     /** 占位符文本 */
-    placeholder?: string;
+    placeholder?: string
     /** 是否只读 */
-    readOnly?: boolean;
+    readOnly?: boolean
     /** 文件上传函数，接受 File + kind 返回 EdmUploadResult */
-    upload: EdmUploadHandler;
+    upload: EdmUploadHandler
     /** 获取编辑器配置（如最大上传数量，返回 { maxCount }） */
-    fetchConfig?: () => Promise<EdmConfig>;
+    fetchConfig?: () => Promise<EdmConfig>
     /** 下载/展示 URL 解析器（图片/视频/文件） */
-    resolveDownloadUrl?: EdmUrlResolver;
+    resolveDownloadUrl?: EdmUrlResolver
     /** 图片上传 accept 属性 */
-    imageAccept?: string;
+    imageAccept?: string
     /** 视频上传 accept 属性 */
-    videoAccept?: string;
+    videoAccept?: string
     /** 文件上传 accept 属性 */
-    fileAccept?: string;
+    fileAccept?: string
     /** 当前内容中的 EDM 附件列表 */
-    attachmentList?: EdmAttachment[];
+    attachmentList?: EdmAttachment[]
   }>(),
   {
     modelValue: '',
@@ -48,20 +48,20 @@ const props = withDefaults(
     fileAccept: '',
     attachmentList: () => [],
   },
-);
+)
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string];
-  'update:attachmentList': [value: EdmAttachment[]];
+  'update:modelValue': [value: string]
+  'update:attachmentList': [value: EdmAttachment[]]
   /** 内容变更事件 */
-  change: [value: string];
+  'change': [value: string]
   /** 上传开始 */
-  'upload-start': [{ file: File; kind: EdmUploadKind }];
+  'upload-start': [{ file: File, kind: EdmUploadKind }]
   /** 上传成功 */
-  'upload-success': [EdmUploadSuccessPayload];
+  'upload-success': [EdmUploadSuccessPayload]
   /** 上传失败 */
-  'upload-error': [EdmUploadErrorPayload];
-}>();
+  'upload-error': [EdmUploadErrorPayload]
+}>()
 
 // 将核心逻辑委托给 useEdmEditor composable
 const {
@@ -76,16 +76,16 @@ const {
   maxCount,
   uploadedCount,
   handleFileInputChange,
-} = useEdmEditor(props as UseEdmEditorProps, emit as UseEdmEditorEmit);
+} = useEdmEditor(props as UseEdmEditorProps, emit as UseEdmEditorEmit)
 </script>
 
 <template>
   <div class="rich-editor" :class="{ 'rich-editor--readonly': readOnly }">
     <div class="rich-editor__canvas">
-      <div ref="editorRef" class="rich-editor__body"></div>
+      <div ref="editorRef" class="rich-editor__body" />
 
       <div v-if="isBusy" class="rich-editor__uploading" role="status">
-        <span class="rich-editor__spinner" aria-hidden="true"></span>
+        <span class="rich-editor__spinner" aria-hidden="true" />
         <span>{{ uploadingLabel }}</span>
       </div>
 
@@ -101,7 +101,7 @@ const {
       :accept="imageAccept"
       multiple
       @change="handleFileInputChange('image', $event)"
-    />
+    >
     <input
       ref="videoInputRef"
       class="rich-editor__input"
@@ -109,7 +109,7 @@ const {
       :accept="videoAccept"
       multiple
       @change="handleFileInputChange('video', $event)"
-    />
+    >
     <input
       ref="fileInputRef"
       class="rich-editor__input"
@@ -117,7 +117,7 @@ const {
       :accept="fileAccept"
       multiple
       @change="handleFileInputChange('file', $event)"
-    />
+    >
 
     <div v-if="errorMessage" class="rich-editor__error" role="alert">
       {{ errorMessage }}

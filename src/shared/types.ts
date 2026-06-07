@@ -5,7 +5,7 @@
  * - `video` — 视频（上传后播放器预览）
  * - `file`  — 文件（以下载链接形式展示）
  */
-export type EdmUploadKind = 'image' | 'video' | 'file';
+export type EdmUploadKind = 'image' | 'video' | 'file'
 
 /**
  * 上传完成后后端返回的结果。
@@ -16,21 +16,21 @@ export type EdmUploadKind = 'image' | 'video' | 'file';
  */
 export interface EdmUploadResult {
   /** 后端分配的 EDM 资源 ID，会写入 `data-edm-id` 属性 */
-  edmId: string;
+  edmId: string
   /** 后端分配的数字附件 ID，会写入 `data-attachment-id` 属性 */
-  attachmentId?: number;
+  attachmentId?: number
   /** 预览地址（图片/视频） */
-  previewUrl?: string;
+  previewUrl?: string
   /** 下载地址 */
-  downloadUrl?: string;
+  downloadUrl?: string
   /** 通用 URL，在 preview/download 均未提供时作为兜底 */
-  url?: string;
+  url?: string
   /** 文件名 */
-  fileName?: string;
+  fileName?: string
   /** MIME 类型 */
-  mimeType?: string;
+  mimeType?: string
   /** 文件大小（字节） */
-  size?: number;
+  size?: number
 }
 
 /**
@@ -41,21 +41,21 @@ export interface EdmUploadResult {
  */
 export interface EdmEmbedValue {
   /** EDM 资源 ID */
-  edmId: string;
+  edmId: string
   /** 数字附件 ID */
-  attachmentId?: number;
+  attachmentId?: number
   /** 当前有效的资源 URL（preview 或 download） */
-  url: string;
+  url: string
   /** 文件名 */
-  name?: string;
+  name?: string
   /** MIME 类型 */
-  mimeType?: string;
+  mimeType?: string
   /** 文件大小（字节） */
-  size?: number;
+  size?: number
   /** 图片宽度（像素），仅 image 类型有效 */
-  width?: number;
+  width?: number
   /** 图片高度（像素），仅 image 类型有效 */
-  height?: number;
+  height?: number
 }
 
 /**
@@ -70,7 +70,7 @@ export interface EdmEmbedValue {
 export type EdmUploadHandler = (
   file: File,
   kind: EdmUploadKind,
-) => Promise<EdmUploadResult>;
+) => Promise<EdmUploadResult>
 
 /**
  * URL 解析函数签名。
@@ -88,27 +88,27 @@ export type EdmUrlResolver = (
   edmId: string,
   kind: EdmUploadKind,
   result?: EdmUploadResult,
-) => string | Promise<string>;
+) => string | Promise<string>
 
 /** `upload-start` / `upload-error` 事件的 payload */
 export interface EdmUploadEventPayload {
-  file: File;
-  kind: EdmUploadKind;
+  file: File
+  kind: EdmUploadKind
 }
 
 /** `upload-success` 事件的 payload */
 export interface EdmUploadSuccessPayload extends EdmUploadEventPayload {
-  result: EdmUploadResult;
+  result: EdmUploadResult
 }
 
 /** `upload-error` 事件的 payload */
 export interface EdmUploadErrorPayload extends EdmUploadEventPayload {
-  error: unknown;
+  error: unknown
 }
 
 /** 编辑器内容中 EDM 附件的 ID 摘要 */
 export interface EdmAttachment {
-  attachmentId?: number;
-  edmId: string;
-  kind: EdmUploadKind;
+  attachmentId?: number
+  edmId: string
+  kind: EdmUploadKind
 }

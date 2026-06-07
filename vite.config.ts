@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [vue()],
@@ -13,7 +13,7 @@ export default defineConfig({
       entry: 'src/editor/index.ts',
       name: 'VueQuillEditorEdm',
       formats: ['es', 'cjs'],
-      fileName: (format) => `vue-quill-editor-edm.${format === 'cjs' ? 'cjs' : 'js'}`,
+      fileName: format => `vue-quill-editor-edm.${format === 'cjs' ? 'cjs' : 'js'}`,
     },
     rollupOptions: {
       external: ['vue', 'quill', 'quill/dist/quill.snow.css'],
@@ -27,4 +27,4 @@ export default defineConfig({
     cssCodeSplit: false,
     emptyOutDir: false,
   },
-});
+})
