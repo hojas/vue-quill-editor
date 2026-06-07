@@ -106,6 +106,7 @@
 .ql-edm-loading {
   position: relative;
   overflow: hidden;
+  --edm-shimmer-opacity: 0.3;
 }
 
 .ql-edm-image.ql-edm-loading {
@@ -116,6 +117,7 @@
 .ql-edm-video.ql-edm-loading {
   min-height: 220px;
   background: #1a1f2e;
+  --edm-shimmer-opacity: 0.08;
 }
 
 .ql-edm-loading::after {
@@ -125,19 +127,10 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, var(--edm-shimmer-opacity)) 50%,
     transparent 100%
   );
   animation: edm-shimmer 1.5s ease-in-out infinite;
-}
-
-.ql-edm-video.ql-edm-loading::after {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    transparent 100%
-  );
 }
 
 .ql-edm-loaded img,

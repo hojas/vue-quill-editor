@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch, type Ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import Quill from 'quill';
 import { registerEdmBlots, setEdmUrlResolvers } from '../quill/edmBlots';
 import { initImageResize, removeAllResizeHandles } from '../quill/imageResize';
@@ -74,11 +74,13 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   // ---- computed ----
   const isBusy = computed(() => uploadingKind.value !== null);
 
-  const uploadingLabel = computed(() => {
-    if (uploadingKind.value === 'image') return '图片上传中';
-    if (uploadingKind.value === 'video') return '视频上传中';
-    return '文件上传中';
-  });
+  const UPLOAD_LABEL: Record<EdmUploadKind, string> = {
+    image: '图片上传中',
+    video: '视频上传中',
+    file: '文件上传中',
+  };
+
+  const uploadingLabel = computed(() => UPLOAD_LABEL[uploadingKind.value || 'file']);
 
   // ---- lifecycle ----
   onMounted(async () => {
@@ -181,13 +183,9 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   // ---- file picker ----
   function openFilePicker(kind: EdmUploadKind): void {
     if (props.readOnly || isBusy.value) return;
-    getInputRef(kind).value?.click();
-  }
-
-  function getInputRef(kind: EdmUploadKind): Ref<HTMLInputElement | null> {
-    if (kind === 'image') return imageInputRef;
-    if (kind === 'video') return videoInputRef;
-    return fileInputRef;
+    const ref =
+      kind === 'image' ? imageInputRef : kind === 'video' ? videoInputRef : fileInputRef;
+    ref.value?.click();
   }
 
   async function handleFileInputChange(kind: EdmUploadKind, event: Event): Promise<void> {

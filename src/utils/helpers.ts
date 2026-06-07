@@ -29,6 +29,23 @@ export function defaultEdmUrl(edmId: string, attachmentId?: number, action = 'do
   return `/api/edm/${encodeURIComponent(String(id))}/${action}`;
 }
 
+export async function downloadFile(url: string, fileName: string): Promise<void> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  } catch {
+    window.open(url, '_blank');
+  }
+}
+
 export async function resolveEdmUrl(
   resolver: EdmUrlResolver | undefined,
   edmId: string,

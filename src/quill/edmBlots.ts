@@ -1,6 +1,6 @@
 import Quill from 'quill';
 import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../types/edm';
-import { defaultEdmUrl, isUnresolvedUrl } from '../utils/helpers';
+import { defaultEdmUrl, downloadFile, isUnresolvedUrl } from '../utils/helpers';
 import { attachResizeHandles } from './imageResize';
 
 // ============================================================
@@ -257,20 +257,7 @@ export class EdmFileBlot extends BlockEmbed {
       event.preventDefault();
       event.stopPropagation();
       const url = link.getAttribute('href');
-      if (!url) return;
-      fetch(url)
-        .then((res) => res.blob())
-        .then((blob) => {
-          const blobUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(blobUrl);
-        })
-        .catch(() => window.open(url, '_blank'));
+      if (url) void downloadFile(url, fileName);
     });
     setCommonAttributes(link, normalizedValue, 'file');
     node.append(link);

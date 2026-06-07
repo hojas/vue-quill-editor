@@ -2,7 +2,7 @@
 import 'quill/dist/quill.snow.css';
 
 import { nextTick, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue';
-import { isUnresolvedUrl, resolveEdmUrl } from '../utils/helpers';
+import { downloadFile, isUnresolvedUrl, resolveEdmUrl } from '../utils/helpers';
 import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../types/edm';
 
 const props = defineProps<{
@@ -122,22 +122,7 @@ async function handleFileDownload(event: MouseEvent): Promise<void> {
 
   const url = link.getAttribute('href');
   const fileName = fileEl.getAttribute('data-file-name') || 'download';
-  if (!url) return;
-
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(blobUrl);
-  } catch {
-    window.open(url, '_blank');
-  }
+  if (url) await downloadFile(url, fileName);
 }
 </script>
 
