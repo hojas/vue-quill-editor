@@ -47,13 +47,20 @@ function getLazyObserver(): IntersectionObserver {
 /**
  * 为图片/视频元素加载展示 URL。
  *
- * 通过外部注入的 `resolveUrlResolver` 获取真实 URL，
- * 写入 media.src 并切换 CSS 状态类。无 resolver 时进入 error 状态。
+ * data-src 已有 CDN URL（由 upload 返回）时直接使用，避免冗余 API 调用。
+ * 否则通过外部注入的 resolveUrlResolver 获取。
  */
 async function loadMedia(
   el: HTMLElement,
   media: HTMLImageElement | HTMLVideoElement,
 ): Promise<void> {
+  // 上传时已返回 CDN URL → 直接使用，不调 resolver
+  if (media.dataset.src && !media.dataset.src.startsWith('/api/')) {
+    setMediaHandlers(el, media);
+    media.src = media.dataset.src;
+    return;
+  }
+
   const edmId = media.dataset.edmId || el.getAttribute('data-edm-id') || '';
   const kind = (el.getAttribute('data-edm-type') as EdmUploadKind) || 'image';
 
