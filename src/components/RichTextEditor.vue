@@ -14,17 +14,29 @@ import type {
 
 defineOptions({ name: 'RichTextEditor' });
 
+// ---- Props & Emits ----
+
 const props = withDefaults(
   defineProps<{
+    /** 编辑器 HTML 内容（v-model） */
     modelValue?: string;
+    /** 占位符文本 */
     placeholder?: string;
+    /** 是否只读 */
     readOnly?: boolean;
+    /** 文件上传函数，接受 File + kind 返回 EdmUploadResult */
     upload: EdmUploadHandler;
+    /** 预览 URL 解析器（图片/视频） */
     resolvePreviewUrl?: EdmUrlResolver;
+    /** 下载 URL 解析器 */
     resolveDownloadUrl?: EdmUrlResolver;
+    /** 图片上传 accept 属性 */
     imageAccept?: string;
+    /** 视频上传 accept 属性 */
     videoAccept?: string;
+    /** 文件上传 accept 属性 */
     fileAccept?: string;
+    /** 当前内容中的 EDM 附件列表 */
     attachmentList?: EdmAttachment[];
   }>(),
   {
@@ -41,12 +53,17 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:modelValue': [value: string];
   'update:attachmentList': [value: EdmAttachment[]];
+  /** 内容变更事件 */
   change: [value: string];
+  /** 上传开始 */
   'upload-start': [{ file: File; kind: EdmUploadKind }];
+  /** 上传成功 */
   'upload-success': [EdmUploadSuccessPayload];
+  /** 上传失败 */
   'upload-error': [EdmUploadErrorPayload];
 }>();
 
+// 将核心逻辑委托给 useEdmEditor composable
 const {
   editorRef,
   imageInputRef,

@@ -13,9 +13,15 @@ const props = defineProps<{
 
 const containerRef = useTemplateRef<HTMLDivElement>('containerRef');
 
+/** 懒加载观察器（单例） */
 let viewObserver: IntersectionObserver | null = null;
 
-// ---- Lazy loading observer ----
+// ---- 懒加载观察器 ----
+/**
+ * 获取/创建 IntersectionObserver 单例。
+ *
+ * 图片/视频进入视口（提前 200px）时将 data-src 写入 src 并切换状态类。
+ */
 function getViewObserver(): IntersectionObserver {
   if (!viewObserver) {
     viewObserver = new IntersectionObserver(
@@ -55,8 +61,9 @@ function getViewObserver(): IntersectionObserver {
   return viewObserver;
 }
 
-// ---- Lifecycle ----
+// ---- 生命周期 ----
 onMounted(() => refreshEmbeds());
+/** 监听 content 变化，等 DOM 更新后刷新嵌入 */
 watch(() => props.content, () => nextTick(refreshEmbeds));
 
 onBeforeUnmount(() => {
@@ -64,7 +71,12 @@ onBeforeUnmount(() => {
   viewObserver = null;
 });
 
-// ---- Embed refresh ----
+// ---- 嵌入刷新 ----
+/**
+ * 遍历容器中所有 EDM 嵌入元素，解析 URL 并注册到懒加载观察器。
+ *
+ * 文件类型直接解析下载 URL；图片/视频写入 data-src 后等待进入视口。
+ */
 async function refreshEmbeds(): Promise<void> {
   if (!containerRef.value) return;
 
@@ -108,7 +120,13 @@ async function refreshEmbeds(): Promise<void> {
   );
 }
 
-// ---- File download ----
+// ---- 文件下载 ----
+/**
+ * 文件嵌入的点击事件处理（事件委托）。
+ *
+ * 拦截 `[data-edm-type="file"]` 上的点击，以 blob 方式触发下载，
+ * 失败时降级为新窗口打开。
+ */
 async function handleFileDownload(event: MouseEvent): Promise<void> {
   const target = event.target as HTMLElement;
   const fileEl = target.closest<HTMLElement>('[data-edm-type="file"]');

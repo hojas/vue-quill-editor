@@ -19,6 +19,11 @@ import type {
   EdmUrlResolver,
 } from '../types/edm';
 
+/**
+ * `useEdmEditor` 的 props 入参。
+ *
+ * 由 `RichTextEditor` 组件通过 `withDefaults` 注入默认值后传入。
+ */
 export interface UseEdmEditorProps {
   modelValue: string;
   placeholder: string;
@@ -31,6 +36,11 @@ export interface UseEdmEditorProps {
   fileAccept: string;
 }
 
+/**
+ * `useEdmEditor` 的事件签名。
+ *
+ * 与 `RichTextEditor` 的 `defineEmits` 一一对应。
+ */
 export interface UseEdmEditorEmit {
   (event: 'update:modelValue', value: string): void;
   (event: 'change', value: string): void;
@@ -40,6 +50,7 @@ export interface UseEdmEditorEmit {
   (event: 'update:attachmentList', value: EdmAttachment[]): void;
 }
 
+/** Quill 工具栏配置，包含自定义的 EDM 插入按钮 */
 const toolbarConfig = [
   [{ header: [1, 2, false] }],
   ['bold', 'italic', 'underline', 'strike'],
@@ -48,6 +59,14 @@ const toolbarConfig = [
   ['clean'],
 ];
 
+/**
+ * EDM 富文本编辑器核心 composable。
+ *
+ * 封装了 Quill 实例的创建/销毁、文件上传管线（选择 → 上传 → 插入 blot）、
+ * HTML 同步、粘贴拦截、拖拽拦截、编辑器内容与 attachmentList 的双向绑定。
+ *
+ * @returns 模板所需的 ref 和事件处理函数
+ */
 export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   // ---- DOM refs ----
   const editorRef = ref<HTMLDivElement | null>(null);
@@ -56,11 +75,17 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   const fileInputRef = ref<HTMLInputElement | null>(null);
 
   // ---- state ----
+  /** 当前正在上传的资源类型，为 null 表示空闲 */
   const uploadingKind = shallowRef<EdmUploadKind | null>(null);
+  /** 上传或解析过程中的错误消息 */
   const errorMessage = shallowRef('');
+  /** 最近一次同步后的编辑器 HTML，用于和 modelValue 比较避免循环更新 */
   const lastHtml = shallowRef('');
 
+  /** Quill 实例 */
   let quill: Quill | null = null;
+
+  /** 阻止编辑器内的原生拖拽行为（避免图片/文件拖入时浏览器导航） */
   const blockDragStart = (e: DragEvent) => e.preventDefault();
   const blockDragOver = (e: DragEvent) => {
     e.preventDefault();
@@ -72,8 +97,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   };
 
   // ---- computed ----
+  /** 是否有上传正在进行 */
   const isBusy = computed(() => uploadingKind.value !== null);
 
+  /** 上传类型 → 中文提示文案 */
   const UPLOAD_LABEL: Record<EdmUploadKind, string> = {
     image: '图片上传中',
     video: '视频上传中',
@@ -88,6 +115,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     setEdmUrlResolvers(props.resolvePreviewUrl);
     if (!editorRef.value) return;
 
+    // 初始化 Quill 实例
     quill = new Quill(editorRef.value, {
       theme: 'snow',
       placeholder: props.placeholder,
@@ -112,6 +140,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     quill.root.addEventListener('dragover', blockDragOver, true);
     quill.root.addEventListener('drop', blockDrop, true);
 
+    // 有初始内容时先解析 EDM URL 再写入编辑器
     if (props.modelValue) {
       await setEditorHtml(props.modelValue);
     } else {
@@ -130,6 +159,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   });
 
   // ---- watchers ----
+  /**
+   * 监听外部 modelValue 变化，同步到编辑器。
+   *
+   * 通过 `lastHtml` 比对避免自身编辑触发的循环更新。
+   */
   watch(
     () => props.modelValue,
     async (nextValue) => {
@@ -143,12 +177,18 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     },
   );
 
+  /** 监听 readOnly 切换，启用/禁用编辑器 */
   watch(
     () => props.readOnly,
     (nextReadOnly) => quill?.enable(!nextReadOnly),
   );
 
   // ---- toolbar titles ----
+  /**
+   * 为 Quill 工具栏按钮添加中文 title 提示。
+   *
+   * 遍历工具栏 DOM 容器，为匹配的按钮设置 `title` 属性。
+   */
   function addToolbarTitles(): void {
     if (!quill) return;
     const tb = quill.getModule('toolbar') as { container?: HTMLElement } | undefined;
@@ -181,6 +221,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   }
 
   // ---- file picker ----
+  /**
+   * 根据资源类型打开对应的隐藏 file input。
+   *
+   * 只读或上传进行中时忽略点击。
+   */
   function openFilePicker(kind: EdmUploadKind): void {
     if (props.readOnly || isBusy.value) return;
     const ref =
@@ -188,6 +233,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     ref.value?.click();
   }
 
+  /**
+   * file input 的 change 事件处理：读取选中文件并触发插入流程。
+   *
+   * 处理后清空 input.value，确保重复选择同一文件也能再次触发 change。
+   */
   async function handleFileInputChange(kind: EdmUploadKind, event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files || []);
@@ -197,20 +247,33 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   }
 
   // ---- file insertion ----
+  /**
+   * 将一批文件依次上传并插入编辑器。
+   *
+   * @param files       - 待插入的文件列表
+   * @param forcedKind  - 强制指定类型；不传则根据 MIME 自动推断
+   */
   async function insertFiles(files: File[], forcedKind?: EdmUploadKind): Promise<void> {
     if (!quill || props.readOnly) return;
+    // 在光标位置处插入；无选区时插入到文档末尾
     let insertIndex = quill.getSelection(true)?.index ?? Math.max(quill.getLength() - 1, 0);
     for (const file of files) {
       const kind = forcedKind || inferUploadKind(file);
       try {
         insertIndex = await uploadAndInsert(file, kind, insertIndex);
       } catch {
+        // 上传失败时跳过当前文件，继续处理下一个
         continue;
       }
     }
   }
 
   // ---- upload & embed ----
+  /**
+   * 上传单个文件并将其以自定义 blot 形式插入编辑器。
+   *
+   * @returns 下一个可用的插入位置（当前索引 + 1）
+   */
   async function uploadAndInsert(
     file: File,
     kind: EdmUploadKind,
@@ -241,6 +304,12 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     }
   }
 
+  /**
+   * 根据上传结果构建写入 blot 的 EdmEmbedValue。
+   *
+   * URL 优先级：result 中直接携带的 URL → 通过 resolver 解析。
+   * 文件类型的 previewUrl 直接复用 downloadUrl。
+   */
   async function buildEmbedValue(
     file: File,
     kind: EdmUploadKind,
@@ -287,6 +356,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
         if (!edmId || !kind) return;
 
         if (kind === 'file') {
+          // 文件类型：解析下载 URL 并更新链接
           const attachmentIdRaw = el.getAttribute('data-attachment-id');
           const url = await resolveEdmUrl(
             props.resolveDownloadUrl,
@@ -297,6 +367,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
           const link = el.querySelector('a');
           if (link) link.setAttribute('href', url);
         } else {
+          // 图片/视频：清除旧的 data-src，触发 IntersectionObserver 重新懒加载
           const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
           if (media) delete media.dataset.src;
         }
@@ -307,6 +378,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   }
 
   // ---- paste ----
+  /**
+   * 粘贴事件处理：提取剪贴板中的文件并插入编辑器。
+   *
+   * 无文件时走 Quill 默认粘贴行为。
+   */
   function handlePaste(event: ClipboardEvent): void {
     const files = Array.from(event.clipboardData?.files || []);
     if (!files.length) return;
@@ -314,6 +390,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     void insertFiles(files);
   }
 
+  /**
+   * 将 HTML 写入编辑器。
+   *
+   * 写入前会先解析 EDM 嵌入的 URL，写入期间暂时解除 text-change 监听避免误触发同步。
+   */
   async function setEditorHtml(html: string): Promise<void> {
     if (!quill) return;
     const resolvedHtml = await resolveHtmlEmbeds(html);
@@ -324,12 +405,22 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     syncHtmlFromEditor();
   }
 
+  /**
+   * 确保编辑器末尾存在一个换行段落。
+   *
+   * 如果编辑器以 EDM embed 结尾，缺少换行会导致光标无法定位到 embed 之后。
+   */
   function ensureTrailingParagraph(): void {
     if (!quill) return;
     quill.insertText(quill.getLength(), '\n', 'api');
   }
 
   // ---- HTML sync ----
+  /**
+   * 从编辑器 DOM 中提取所有 EDM 附件列表（去重）。
+   *
+   * 用于同步 `update:attachmentList` 事件，供父组件追踪已使用的 EDM 资源。
+   */
   function extractAttachments(): EdmAttachment[] {
     if (!quill) return [];
     const els = quill.root.querySelectorAll<HTMLElement>('[data-edm-id]');
@@ -349,6 +440,9 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     return list;
   }
 
+  /**
+   * 从编辑器取出 HTML 并触发 modelValue / change / attachmentList 事件。
+   */
   function syncHtmlFromEditor(): void {
     const html = getEditorHtml();
     lastHtml.value = html;
@@ -357,14 +451,20 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     emit('update:attachmentList', extractAttachments());
   }
 
+  /**
+   * 获取编辑器当前 HTML。
+   *
+   * 克隆 DOM 后先移除缩放把手（防止泄漏到输出），
+   * 若末尾以 EDM embed 结尾则补一个空段落确保重新加载时结构完整。
+   */
   function getEditorHtml(): string {
     if (!quill) return '';
-    // Clone the root and remove resize handles so they don't leak into HTML output.
+    // 克隆根节点，移除缩放把手避免污染 HTML 输出
     const clone = quill.root.cloneNode(true) as HTMLElement;
     removeAllResizeHandles(clone);
     const html = clone.innerHTML;
     // 末尾如果是 EDM embed，多补一个 <p><br></p>，
-    // 防止保存后重新加载时唯一一个末尾段落被 Quill 当结构换行符合并。
+    // 防止保存后重新加载时唯一一个末尾段落被 Quill 当结构换行符合并
     if (/<\/edm-(?:image|video|file)>(?:<\/p>)?\s*$/.test(html.trimEnd())) {
       return html + '<p><br></p>';
     }

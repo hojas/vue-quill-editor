@@ -5,13 +5,17 @@ import RichTextEditor from '../components/RichTextEditor.vue';
 import EdmContentViewer from '../components/EdmContentViewer.vue';
 import { resolveMockEdmUrl, uploadToMockEdm } from '../services/mockEdmApi';
 
+/** 编辑器内容（HTML） */
 const content = ref('<p>欢迎编辑 EDM 内容。</p>');
+/** 编辑器中已使用的 EDM 附件列表 */
 const attachments = ref<EdmAttachment[]>([]);
 
+/** 对接 mock 上传接口 */
 async function uploadEdm(file: File, kind: EdmUploadKind) {
   return uploadToMockEdm(file, kind);
 }
 
+/** 对接 mock URL 解析接口 */
 async function resolveEdmUrl(attachmentId: string, edmId: string): Promise<string> {
   return resolveMockEdmUrl(attachmentId || edmId);
 }

@@ -4,16 +4,28 @@ import { defaultEdmUrl, downloadFile, isUnresolvedUrl } from '../utils/helpers';
 import { attachResizeHandles } from './imageResize';
 
 // ============================================================
-// Lazy loading — IntersectionObserver + resolver
+// 懒加载 — IntersectionObserver + URL 解析器
 // ============================================================
 
+/** 编辑器内的懒加载观察器（单例） */
 let lazyObserver: IntersectionObserver | null = null;
+/** 外部注入的预览 URL 解析器，在图片/视频进入视口时调用 */
 let resolvePreviewUrlResolver: EdmUrlResolver | undefined;
 
+/**
+ * 注入 URL 解析器，供懒加载时调用。
+ *
+ * 由 `useEdmEditor` 在 onMounted 中调用一次。
+ */
 export function setEdmUrlResolvers(resolver?: EdmUrlResolver): void {
   resolvePreviewUrlResolver = resolver;
 }
 
+/**
+ * 获取/创建懒加载 IntersectionObserver（单例）。
+ *
+ * 元素进入视口（提前 200px）时取消观察，并触发 loadMedia 获取真实 URL。
+ */
 function getLazyObserver(): IntersectionObserver {
   if (!lazyObserver) {
     lazyObserver = new IntersectionObserver(
@@ -32,6 +44,12 @@ function getLazyObserver(): IntersectionObserver {
   return lazyObserver;
 }
 
+/**
+ * 为图片/视频元素加载真实的预览 URL。
+ *
+ * 通过外部 resolver 解析 src，成功后写入 media.src 并切换 CSS 状态类。
+ * 解析失败或缺少必要参数时进入 error 状态。
+ */
 async function loadMedia(
   el: HTMLElement,
   media: HTMLImageElement | HTMLVideoElement,
@@ -66,9 +84,15 @@ async function loadMedia(
 }
 
 // ============================================================
-// URL & attribute helpers
+// URL 安全校验 & 属性读写
 // ============================================================
 
+/**
+ * 校验并返回安全的资源 URL。
+ *
+ * 允许相对路径和已知安全协议（http/https/blob/data），
+ * 拒绝 javascript: 等危险协议。
+ */
 function sanitizeResourceUrl(url: string): string {
   if (!url) return '';
   if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) {
@@ -84,6 +108,11 @@ function sanitizeResourceUrl(url: string): string {
   }
 }
 
+/**
+ * 将存储值归一化为完整的 EdmEmbedValue 对象。
+ *
+ * 支持从旧版纯字符串 edmId 反序列化。
+ */
 function normalizeValue(value: EdmEmbedValue | string): EdmEmbedValue {
   if (typeof value === 'string') {
     return { edmId: value, url: defaultEdmUrl(value) };
@@ -98,6 +127,9 @@ function normalizeValue(value: EdmEmbedValue | string): EdmEmbedValue {
   };
 }
 
+/**
+ * 将 EDM 元数据写入 DOM 元素的 data-* 属性。
+ */
 function setCommonAttributes(
   node: HTMLElement,
   value: EdmEmbedValue,
@@ -120,10 +152,21 @@ function setCommonAttributes(
   }
 }
 
+/**
+ * 在 Quill blot 根节点中查找第一个包含 data-edm-id 的子元素。
+ */
 function findEdmTarget(root: HTMLElement): HTMLElement | null {
   return root.querySelector('[data-edm-id]');
 }
 
+/**
+ * 从 DOM 元素回读 EDM 元数据，构建 EdmEmbedValue。
+ *
+ * 用于 Quill blot 的 `static value()` 方法（编辑器 → delta 序列化）。
+ *
+ * @param root         - blot 根节点
+ * @param urlAttribute - 读取 URL 的属性名：image/video 用 `src`，file 用 `href`
+ */
 function readCommonValue(root: HTMLElement, urlAttribute: 'src' | 'href'): EdmEmbedValue {
   const target = findEdmTarget(root) || root;
   const edmId = target.getAttribute('data-edm-id') || root.getAttribute('data-edm-id') || '';
@@ -151,19 +194,26 @@ function readCommonValue(root: HTMLElement, urlAttribute: 'src' | 'href'): EdmEm
 }
 
 // ============================================================
-// Custom blots
+// 自定义 Blot 定义
 // ============================================================
 
 const BlockEmbed = Quill.import('blots/block/embed') as any;
 
+/**
+ * 从图片/视频 blot 的 DOM 读取 EdmEmbedValue。
+ *
+ * URL 未解析时优先取 media.dataset.src（真实 URL 在懒加载后才写入）。
+ * 同时读取 inline style 中的 width/height 用于图片尺寸回写。
+ */
 function mediaBlotValue(node: HTMLElement): EdmEmbedValue {
   const val = readCommonValue(node, 'src');
   if (!val.url || isUnresolvedUrl(val.url)) {
+    // 如果 href/src 还是默认 API URL，尝试从 data-src 读取已解析的真实 URL
     const target = findEdmTarget(node) || node;
     const dataSrc = target.dataset.src;
     if (dataSrc) val.url = dataSrc;
   }
-  // Read image dimensions from inline styles.
+  // 从 inline style 读取图片缩放尺寸
   const media = node.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
   if (media) {
     const w = parseInt(media.style.width, 10);
@@ -174,6 +224,12 @@ function mediaBlotValue(node: HTMLElement): EdmEmbedValue {
   return val;
 }
 
+/**
+ * 创建图片/视频 blot 的 DOM 结构。
+ *
+ * 结构：`<edm-image/video> → <img/video>`，外层容器负责状态类，内层媒体元素持有 data-src。
+ * 创建后注册到懒加载观察器。
+ */
 function createMediaBlot(
   value: EdmEmbedValue | string,
   kind: 'image' | 'video',
@@ -205,15 +261,17 @@ function createMediaBlot(
   node.classList.add('ql-edm-loading');
   node.append(media);
 
+  // 图片附加缩放把手
   if (kind === 'image') {
     attachResizeHandles(node);
   }
 
+  // 注册到懒加载观察器
   getLazyObserver().observe(node);
   return node;
 }
 
-
+/** 图片嵌入 Blot。使用自定义 `<edm-image>` 标签，支持懒加载和拖拽缩放。 */
 export class EdmImageBlot extends BlockEmbed {
   static blotName = 'edmImage';
   static tagName = 'edm-image';
@@ -225,6 +283,7 @@ export class EdmImageBlot extends BlockEmbed {
   static value = mediaBlotValue;
 }
 
+/** 视频嵌入 Blot。使用自定义 `<edm-video>` 标签，支持懒加载和控制条。 */
 export class EdmVideoBlot extends BlockEmbed {
   static blotName = 'edmVideo';
   static tagName = 'edm-video';
@@ -236,11 +295,17 @@ export class EdmVideoBlot extends BlockEmbed {
   static value = mediaBlotValue;
 }
 
+/** 文件嵌入 Blot。使用自定义 `<edm-file>` 标签，渲染为可下载的链接。 */
 export class EdmFileBlot extends BlockEmbed {
   static blotName = 'edmFile';
   static tagName = 'edm-file';
   static className = 'ql-edm-file';
 
+  /**
+   * 创建文件下载链接 DOM。
+   *
+   * 点击时通过 `downloadFile` 以 blob 方式下载，失败降级为新窗口打开。
+   */
   static create(value: EdmEmbedValue | string): HTMLElement {
     const normalizedValue = normalizeValue(value);
     const node = document.createElement('edm-file');
@@ -271,11 +336,17 @@ export class EdmFileBlot extends BlockEmbed {
 }
 
 // ============================================================
-// Registration
+// 注册
 // ============================================================
 
+/** 防止重复注册的标记 */
 let registered = false;
 
+/**
+ * 向 Quill 注册所有 EDM 自定义 Blot 及工具栏图标。
+ *
+ * 仅首次调用生效，重复调用会被跳过。
+ */
 export function registerEdmBlots(): void {
   if (registered) return;
 
@@ -288,6 +359,7 @@ export function registerEdmBlots(): void {
     true,
   );
 
+  // 复用 Quill 内置图标作为自定义按钮的图标
   const icons = Quill.import('ui/icons') as Record<string, string>;
   if (!icons['edmImage'] && icons['image']) {
     icons['edmImage'] = icons['image'];
