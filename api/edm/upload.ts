@@ -34,8 +34,7 @@ export default async function handler(req: import('http').IncomingMessage, res: 
     // 保存到 Vercel Blob
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const mimeType = filePart.contentType || 'application/octet-stream';
-    const pathname = `${id}/${encodeURIComponent(filePart.filename || 'download')}`;
-    const blob = await put(pathname, Buffer.from(filePart.data), {
+    await put(id, Buffer.from(filePart.data), {
       access: 'public',
       contentType: mimeType,
     });

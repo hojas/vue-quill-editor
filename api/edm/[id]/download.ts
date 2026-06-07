@@ -18,7 +18,7 @@ export default async function handler(req: import('http').IncomingMessage, res: 
       return res.end(JSON.stringify({ error: '缺少文件 ID' }));
     }
 
-    const { blobs } = await head({ prefix: `${id}/` });
+    const { blobs } = await head({ prefix: id });
     if (blobs.length === 0) {
       res.statusCode = 404;
       res.setHeader('Content-Type', 'application/json');
