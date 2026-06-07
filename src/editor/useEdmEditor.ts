@@ -280,14 +280,16 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
    */
   async function insertFiles(files: File[], forcedKind?: EdmUploadKind): Promise<void> {
     if (!quill || props.readOnly) return;
+    // 不超过上传上限
+    const remaining = maxCount.value - uploadedCount.value;
+    if (remaining <= 0) return;
     // 在光标位置处插入；无选区时插入到文档末尾
     let insertIndex = quill.getSelection(true)?.index ?? Math.max(quill.getLength() - 1, 0);
-    for (const file of files) {
+    for (const file of files.slice(0, remaining)) {
       const kind = forcedKind || inferUploadKind(file);
       try {
         insertIndex = await uploadAndInsert(file, kind, insertIndex);
       } catch {
-        // 上传失败时跳过当前文件，继续处理下一个
         continue;
       }
     }
@@ -406,7 +408,14 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     if (!files.length) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    void insertFiles(files);
+
+    // 限制粘贴数量不超过上传上限
+    const remaining = maxCount.value - uploadedCount.value;
+    if (remaining <= 0) {
+      errorMessage.value = `最多上传 ${maxCount.value} 个文件`;
+      return;
+    }
+    void insertFiles(files.slice(0, remaining));
   }
 
   /**
