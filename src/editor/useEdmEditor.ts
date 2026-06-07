@@ -1,3 +1,4 @@
+import type { ComputedRef, Ref } from 'vue'
 import type {
   EdmAttachment,
   EdmEmbedValue,
@@ -43,16 +44,16 @@ export interface UseEdmEditorProps {
 
 /** `useEdmEditor` 返回值 */
 export interface UseEdmEditorReturn {
-  editorRef: ReturnType<typeof ref<HTMLDivElement | null>>
-  imageInputRef: ReturnType<typeof ref<HTMLInputElement | null>>
-  videoInputRef: ReturnType<typeof ref<HTMLInputElement | null>>
-  fileInputRef: ReturnType<typeof ref<HTMLInputElement | null>>
-  errorMessage: ReturnType<typeof shallowRef<string>>
-  isBusy: ReturnType<typeof computed<boolean>>
-  uploadingLabel: ReturnType<typeof computed<string>>
-  isUploadLimitReached: ReturnType<typeof computed<boolean>>
-  maxCount: ReturnType<typeof ref<number>>
-  uploadedCount: ReturnType<typeof computed<number>>
+  editorRef: Ref<HTMLDivElement | null>
+  imageInputRef: Ref<HTMLInputElement | null>
+  videoInputRef: Ref<HTMLInputElement | null>
+  fileInputRef: Ref<HTMLInputElement | null>
+  errorMessage: Ref<string>
+  isBusy: ComputedRef<boolean>
+  uploadingLabel: ComputedRef<string>
+  isUploadLimitReached: ComputedRef<boolean>
+  maxCount: Ref<number>
+  uploadedCount: ComputedRef<number>
   handleFileInputChange: (e: Event) => void
 }
 
