@@ -1,6 +1,6 @@
 import Quill from 'quill';
-import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../types/edm';
-import { downloadFile } from '../utils/helpers';
+import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../shared/types';
+import { downloadFile } from '../shared/utils';
 import { attachResizeHandles } from './imageResize';
 
 // ============================================================

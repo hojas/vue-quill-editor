@@ -1,4 +1,4 @@
-import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../types/edm';
+import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from './types';
 
 // ============================================================
 // 类型与 Blot 工具函数

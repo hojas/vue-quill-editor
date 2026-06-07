@@ -1,13 +1,13 @@
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import Quill from 'quill';
-import { registerEdmBlots, setEdmUrlResolvers } from '../quill/edmBlots';
-import { initImageResize, removeAllResizeHandles } from '../quill/imageResize';
+import { registerEdmBlots, setEdmUrlResolvers } from './edmBlots';
+import { initImageResize, removeAllResizeHandles } from './imageResize';
 import {
   getBlotName,
   getErrorMessage,
   inferUploadKind,
   resolveEdmUrl,
-} from '../utils/helpers';
+} from '../shared/utils';
 import type {
   EdmAttachment,
   EdmEmbedValue,
@@ -17,7 +17,7 @@ import type {
   EdmUploadResult,
   EdmUploadSuccessPayload,
   EdmUrlResolver,
-} from '../types/edm';
+} from '../shared/types';
 
 /**
  * `useEdmEditor` 的 props 入参。

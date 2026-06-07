@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import 'quill/dist/quill.snow.css';
 
-import { useEdmEditor } from '../composables/useEdmEditor';
-import type { UseEdmEditorEmit, UseEdmEditorProps } from '../composables/useEdmEditor';
+import { useEdmEditor } from './useEdmEditor';
+import type { UseEdmEditorEmit, UseEdmEditorProps } from './useEdmEditor';
 import type {
   EdmAttachment,
   EdmUploadErrorPayload,
@@ -10,7 +10,7 @@ import type {
   EdmUploadKind,
   EdmUploadSuccessPayload,
   EdmUrlResolver,
-} from '../types/edm';
+} from '../shared/types';
 
 defineOptions({ name: 'RichTextEditor' });
 

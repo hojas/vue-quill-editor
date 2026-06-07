@@ -1,4 +1,4 @@
-import type { EdmUploadKind, EdmUploadResult } from '../types/edm';
+import type { EdmUploadKind, EdmUploadResult } from '../shared/types';
 
 /**
  * 上传文件到 EDM 服务。

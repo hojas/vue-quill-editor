@@ -2,8 +2,8 @@
 import 'quill/dist/quill.snow.css';
 
 import { nextTick, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue';
-import { downloadFile, resolveEdmUrl } from '../utils/helpers';
-import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../types/edm';
+import { downloadFile, resolveEdmUrl } from '../shared/utils';
+import type { EdmUploadKind, EdmUploadResult, EdmUrlResolver } from '../shared/types';
 
 const props = defineProps<{
   content: string;
