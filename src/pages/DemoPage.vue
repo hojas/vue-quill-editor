@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { EdmAttachment, EdmUploadKind } from '../types/edm';
-import RichTextEditor from '../components/RichTextEditor.vue';
-import EdmContentViewer from '../components/EdmContentViewer.vue';
-import { uploadToEdm } from '../services/edmApi';
+import type { EdmAttachment, EdmUploadKind } from '../shared/types';
+import RichTextEditor from '../editor/RichTextEditor.vue';
+import EdmContentViewer from '../viewer/EdmContentViewer.vue';
+import { uploadToEdm } from '../editor/edmApi';
 
 /** 编辑器内容（HTML） */
 const content = ref('<p>欢迎编辑 EDM 内容。</p>');

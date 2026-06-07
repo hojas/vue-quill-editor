@@ -10,7 +10,7 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: 'src/editor/index.ts',
       name: 'VueQuillEditorEdm',
       formats: ['es', 'cjs'],
       fileName: (format) => `vue-quill-editor-edm.${format === 'cjs' ? 'cjs' : 'js'}`,
