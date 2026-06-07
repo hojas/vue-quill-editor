@@ -15,8 +15,15 @@ interface EdmUploadResult {
  *
  * - POST /api/edm/upload         上传文件
  * - GET  /api/edm/:id/download   下载/展示（inline，浏览器根据 Content-Type 渲染）
+ * - GET  /api/edm/config         上传配置
  */
 export function edmRoutes(app: FastifyInstance): void {
+  // ---- 配置 ----
+  app.get('/api/edm/config', async (_req, reply) => {
+    const maxCount = parseInt(process.env.EDM_MAX_UPLOAD_COUNT || '5', 10);
+    return reply.send({ maxCount });
+  });
+
   // ---- 上传 ----
   app.post('/api/edm/upload', async (req, reply) => {
     const file = await req.file();
