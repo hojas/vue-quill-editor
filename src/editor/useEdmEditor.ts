@@ -8,7 +8,6 @@ import {
   inferUploadKind,
   resolveEdmUrl,
 } from '../shared/utils';
-import { fetchEdmConfig } from './edmApi';
 import type {
   EdmAttachment,
   EdmEmbedValue,
@@ -25,11 +24,18 @@ import type {
  *
  * 由 `RichTextEditor` 组件通过 `withDefaults` 注入默认值后传入。
  */
+/** 编辑器配置 */
+export interface EdmConfig {
+  maxCount: number;
+}
+
 export interface UseEdmEditorProps {
   modelValue: string;
   placeholder: string;
   readOnly: boolean;
   upload: EdmUploadHandler;
+  /** 获取编辑器配置（如最大上传数量） */
+  fetchConfig?: () => Promise<EdmConfig>;
   resolveDownloadUrl?: EdmUrlResolver;
   imageAccept: string;
   videoAccept: string;
@@ -121,11 +127,13 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     registerEdmBlots();
     setEdmUrlResolvers(props.resolveDownloadUrl);
 
-    // 获取上传限制配置
-    try {
-      const config = await fetchEdmConfig();
-      maxCount.value = config.maxCount;
-    } catch { /* 降级使用默认值 5 */ }
+    // 获取上传限制配置（由外部注入）
+    if (props.fetchConfig) {
+      try {
+        const config = await props.fetchConfig();
+        maxCount.value = config.maxCount;
+      } catch { /* 降级使用默认值 5 */ }
+    }
 
     if (!editorRef.value) return;
 

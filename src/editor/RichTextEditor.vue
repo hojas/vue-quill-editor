@@ -2,7 +2,7 @@
 import 'quill/dist/quill.snow.css';
 
 import { useEdmEditor } from './useEdmEditor';
-import type { UseEdmEditorEmit, UseEdmEditorProps } from './useEdmEditor';
+import type { EdmConfig, UseEdmEditorEmit, UseEdmEditorProps } from './useEdmEditor';
 import type {
   EdmAttachment,
   EdmUploadErrorPayload,
@@ -26,6 +26,8 @@ const props = withDefaults(
     readOnly?: boolean;
     /** 文件上传函数，接受 File + kind 返回 EdmUploadResult */
     upload: EdmUploadHandler;
+    /** 获取编辑器配置（如最大上传数量，返回 { maxCount }） */
+    fetchConfig?: () => Promise<EdmConfig>;
     /** 下载/展示 URL 解析器（图片/视频/文件） */
     resolveDownloadUrl?: EdmUrlResolver;
     /** 图片上传 accept 属性 */

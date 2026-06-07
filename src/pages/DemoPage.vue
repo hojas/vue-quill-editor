@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { EdmAttachment, EdmUploadKind } from '../shared/types';
+import type { EdmAttachment, EdmUploadKind, EdmUploadResult } from '../shared/types';
 import RichTextEditor from '../editor/RichTextEditor.vue';
 import EdmContentViewer from '../viewer/EdmContentViewer.vue';
-import { uploadToEdm } from '../editor/edmApi';
 
 /** 编辑器内容（HTML） */
 const content = ref('<p>欢迎编辑 EDM 内容。</p>');
@@ -11,8 +10,18 @@ const content = ref('<p>欢迎编辑 EDM 内容。</p>');
 const attachments = ref<EdmAttachment[]>([]);
 
 /** 对接后端上传接口 POST /api/edm/upload */
-async function uploadEdm(file: File, kind: EdmUploadKind) {
-  return uploadToEdm(file, kind);
+async function uploadEdm(file: File, _kind: EdmUploadKind): Promise<EdmUploadResult> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/api/edm/upload', { method: 'POST', body: form });
+  if (!res.ok) throw new Error('上传失败');
+  return res.json();
+}
+
+/** 获取编辑器配置 */
+async function fetchEdmConfig() {
+  const res = await fetch('/api/edm/config');
+  return res.ok ? res.json() : { maxCount: 5 };
 }
 
 /** 对接后端下载接口，返回可展示的 URL */
@@ -35,6 +44,7 @@ async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise
           v-model="content"
           v-model:attachment-list="attachments"
           :upload="uploadEdm"
+          :fetch-config="fetchEdmConfig"
           :resolve-download-url="resolveDownloadUrl"
         />
       </section>
