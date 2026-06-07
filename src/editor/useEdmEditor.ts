@@ -86,8 +86,12 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   const errorMessage = shallowRef('');
   /** 最大上传数量（从后端 API 获取） */
   const maxCount = ref(5);
-  /** 当前已上传数量 */
-  const uploadedCount = ref(0);
+  /** 已完成上传数量（由 syncHtmlFromEditor 更新） */
+  const committedCount = ref(0);
+  /** 正在上传中的数量（同步预占位，防止快速粘贴绕过限制） */
+  let pendingCount = 0;
+  /** 当前有效上传总数 = 已提交 + 进行中 */
+  const totalUploaded = () => committedCount.value + pendingCount;
   /** 最近一次同步后的编辑器 HTML，用于和 modelValue 比较避免循环更新 */
   const lastHtml = shallowRef('');
 
@@ -119,7 +123,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   const uploadingLabel = computed(() => UPLOAD_LABEL[uploadingKind.value || 'file']);
 
   /** 是否已达上传上限 */
-  const isUploadLimitReached = computed(() => uploadedCount.value >= maxCount.value);
+  const isUploadLimitReached = computed(() => totalUploaded() >= maxCount.value);
 
   // ---- lifecycle ----
   onMounted(async () => {
@@ -249,7 +253,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
    */
   function openFilePicker(kind: EdmUploadKind): void {
     if (props.readOnly || isBusy.value) return;
-    if (uploadedCount.value >= maxCount.value) {
+    if (totalUploaded() >= maxCount.value) {
       errorMessage.value = `最多上传 ${maxCount.value} 个文件`;
       return;
     }
@@ -281,10 +285,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   async function insertFiles(files: File[], forcedKind?: EdmUploadKind): Promise<void> {
     if (!quill || props.readOnly) return;
     // 同步预占位，防止快速连续粘贴绕过限制
-    const remaining = maxCount.value - uploadedCount.value;
+    const remaining = maxCount.value - totalUploaded();
     if (remaining <= 0) return;
     const toUpload = files.slice(0, remaining);
-    uploadedCount.value += toUpload.length;
+    pendingCount += toUpload.length;
     // 在光标位置处插入；无选区时插入到文档末尾
     let insertIndex = quill.getSelection(true)?.index ?? Math.max(quill.getLength() - 1, 0);
     for (const file of toUpload) {
@@ -292,7 +296,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       try {
         insertIndex = await uploadAndInsert(file, kind, insertIndex);
       } catch {
-        uploadedCount.value--; // 失败则释放占位
+        pendingCount--; // 失败则释放占位
         continue;
       }
     }
@@ -412,7 +416,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     event.stopImmediatePropagation();
 
     // 限制粘贴数量不超过上传上限
-    const remaining = maxCount.value - uploadedCount.value;
+    const remaining = maxCount.value - totalUploaded();
     if (remaining <= 0) {
       errorMessage.value = `最多上传 ${maxCount.value} 个文件`;
       return;
@@ -477,7 +481,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     const html = getEditorHtml();
     lastHtml.value = html;
     const attachments = extractAttachments();
-    uploadedCount.value = attachments.length; // 同步实际嵌入数量
+    committedCount.value = attachments.length; // 同步实际嵌入数量
+    pendingCount = 0; // 所有 pending 已提交
     emit('update:modelValue', html);
     emit('change', html);
     emit('update:attachmentList', attachments);
@@ -513,7 +518,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     uploadingLabel,
     isUploadLimitReached,
     maxCount,
-    uploadedCount,
+    uploadedCount: computed(totalUploaded),
     handleFileInputChange,
   };
 }
