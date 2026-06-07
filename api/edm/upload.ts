@@ -18,36 +18,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) {
-    chunks.push(chunk);
+  try {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+    const body = Buffer.concat(chunks);
+
+    const contentType = req.headers['content-type'] || '';
+    const boundary = contentType.split('boundary=')[1];
+    if (!boundary) {
+      return res.status(400).json({ error: '需要 multipart/form-data' });
+    }
+
+    const parts = parseMultipart(body, boundary);
+    const filePart = parts.find((p) => p.name === 'file');
+    if (!filePart) {
+      return res.status(400).json({ error: '未找到上传文件' });
+    }
+
+    const mimeType = filePart.contentType || 'application/octet-stream';
+    const record = await saveFile(filePart.data, filePart.filename || 'download', mimeType);
+
+    const result: EdmUploadResult = {
+      edmId: record.id,
+      attachmentId: parseInt(record.id.split('-')[0], 10),
+      fileName: record.originalName,
+      mimeType: record.mimeType,
+      size: record.size,
+    };
+
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('upload error:', err);
+    return res.status(500).json({ error: err instanceof Error ? err.message : '上传失败' });
   }
-  const body = Buffer.concat(chunks);
-
-  const contentType = req.headers['content-type'] || '';
-  const boundary = contentType.split('boundary=')[1];
-  if (!boundary) {
-    return res.status(400).json({ error: '需要 multipart/form-data' });
-  }
-
-  const parts = parseMultipart(body, boundary);
-  const filePart = parts.find((p) => p.name === 'file');
-  if (!filePart) {
-    return res.status(400).json({ error: '未找到上传文件' });
-  }
-
-  const mimeType = filePart.contentType || 'application/octet-stream';
-  const record = await saveFile(filePart.data, filePart.filename || 'download', mimeType);
-
-  const result: EdmUploadResult = {
-    edmId: record.id,
-    attachmentId: parseInt(record.id.split('-')[0], 10),
-    fileName: record.originalName,
-    mimeType: record.mimeType,
-    size: record.size,
-  };
-
-  return res.status(200).json(result);
 }
 
 /** 简易 multipart/form-data 解析器（适配 Vercel 环境，无外部依赖） */

@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@vercel/blob": "^2.4.0",
+    "@vercel/node": "^5.8.12",
     "vue-router": "^5.1.0"
   }
 }
