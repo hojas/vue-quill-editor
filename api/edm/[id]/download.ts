@@ -1,28 +1,40 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getFile } from '../../../lib/blob-storage';
 
-/**
- * GET /api/edm/:id/download — 从 Vercel Blob 获取文件，307 重定向到公开 URL。
- */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: import('http').IncomingMessage, res: import('http').ServerResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.statusCode = 405;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ error: 'Method not allowed' }));
   }
 
   try {
-    const { id } = req.query;
-    if (!id || typeof id !== 'string') {
-      return res.status(400).json({ error: '缺少文件 ID' });
+    // 手动解析 URL 中的 id 参数：/api/edm/:id/download
+    const url = new URL(req.url || '', `http://${req.headers.host}`);
+    const parts = url.pathname.split('/');
+    const id = parts[parts.indexOf('download') - 1];
+
+    if (!id) {
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: '缺少文件 ID' }));
     }
 
     const record = await getFile(id);
     if (!record) {
-      return res.status(404).json({ error: '文件不存在' });
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: '文件不存在' }));
     }
 
-    return res.redirect(307, record.url);
+    res.statusCode = 307;
+    res.setHeader('Location', record.url);
+    return res.end();
   } catch (err) {
     console.error('download error:', err);
-    return res.status(500).json({ error: err instanceof Error ? err.message : '下载失败' });
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({
+      error: err instanceof Error ? err.message : '下载失败',
+    }));
   }
 }
