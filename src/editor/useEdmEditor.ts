@@ -397,6 +397,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   function handlePaste(event: ClipboardEvent): void {
     const files = Array.from(event.clipboardData?.files || []);
     if (!files.length) return;
+    event.preventDefault();
     event.stopImmediatePropagation();
     void insertFiles(files);
   }
