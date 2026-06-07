@@ -2,6 +2,14 @@
   "buildCommand": "pnpm install && pnpm build:demo",
   "outputDirectory": "demo-dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+    { "source": "/((?!api).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/edm/upload.ts": {
+      "includeFiles": "lib/**"
+    },
+    "api/edm/[id]/download.ts": {
+      "includeFiles": "lib/**"
+    }
+  }
 }
