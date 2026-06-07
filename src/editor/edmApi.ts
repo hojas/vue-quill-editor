@@ -9,6 +9,20 @@ import type { EdmUploadKind, EdmUploadResult } from '../shared/types';
  * @param file - 用户选择的文件
  * @param kind - 资源类型（image / video / file）
  */
+/** EDM 配置 */
+export interface EdmConfig {
+  maxCount: number;
+}
+
+/**
+ * 获取 EDM 上传配置（如最大上传数量）。
+ */
+export async function fetchEdmConfig(): Promise<EdmConfig> {
+  const res = await fetch('/api/edm/config');
+  if (!res.ok) return { maxCount: 5 };
+  return res.json();
+}
+
 export async function uploadToEdm(
   file: File,
   _kind: EdmUploadKind,

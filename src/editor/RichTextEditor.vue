@@ -70,6 +70,9 @@ const {
   errorMessage,
   isBusy,
   uploadingLabel,
+  isUploadLimitReached,
+  maxCount,
+  uploadedCount,
   handleFileInputChange,
 } = useEdmEditor(props as UseEdmEditorProps, emit as UseEdmEditorEmit);
 </script>
@@ -82,6 +85,10 @@ const {
       <div v-if="isBusy" class="rich-editor__uploading" role="status">
         <span class="rich-editor__spinner" aria-hidden="true"></span>
         <span>{{ uploadingLabel }}</span>
+      </div>
+
+      <div v-if="isUploadLimitReached && !isBusy" class="rich-editor__uploading rich-editor__uploading--limit" role="status">
+        <span>已达上传上限（{{ uploadedCount }}/{{ maxCount }}）</span>
       </div>
     </div>
 

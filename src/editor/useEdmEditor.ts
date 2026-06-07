@@ -8,6 +8,7 @@ import {
   inferUploadKind,
   resolveEdmUrl,
 } from '../shared/utils';
+import { fetchEdmConfig } from './edmApi';
 import type {
   EdmAttachment,
   EdmEmbedValue,
@@ -78,6 +79,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
   const uploadingKind = shallowRef<EdmUploadKind | null>(null);
   /** 上传或解析过程中的错误消息 */
   const errorMessage = shallowRef('');
+  /** 最大上传数量（从后端 API 获取） */
+  const maxCount = ref(5);
+  /** 当前已上传数量 */
+  const uploadedCount = ref(0);
   /** 最近一次同步后的编辑器 HTML，用于和 modelValue 比较避免循环更新 */
   const lastHtml = shallowRef('');
 
@@ -108,10 +113,20 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
 
   const uploadingLabel = computed(() => UPLOAD_LABEL[uploadingKind.value || 'file']);
 
+  /** 是否已达上传上限 */
+  const isUploadLimitReached = computed(() => uploadedCount.value >= maxCount.value);
+
   // ---- lifecycle ----
   onMounted(async () => {
     registerEdmBlots();
     setEdmUrlResolvers(props.resolveDownloadUrl);
+
+    // 获取上传限制配置
+    try {
+      const config = await fetchEdmConfig();
+      maxCount.value = config.maxCount;
+    } catch { /* 降级使用默认值 5 */ }
+
     if (!editorRef.value) return;
 
     // 初始化 Quill 实例
@@ -227,6 +242,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
    */
   function openFilePicker(kind: EdmUploadKind): void {
     if (props.readOnly || isBusy.value) return;
+    if (uploadedCount.value >= maxCount.value) {
+      errorMessage.value = `最多上传 ${maxCount.value} 个文件`;
+      return;
+    }
     const ref =
       kind === 'image' ? imageInputRef : kind === 'video' ? videoInputRef : fileInputRef;
     ref.value?.click();
@@ -291,6 +310,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       const embedValue = await buildEmbedValue(file, kind, result);
       quill.insertEmbed(insertIndex, getBlotName(kind), embedValue, 'user');
       quill.setSelection(insertIndex + 1, 0, 'silent');
+      uploadedCount.value++;
       syncHtmlFromEditor();
       emit('upload-success', { file, kind, result });
       return insertIndex + 1;
@@ -470,6 +490,9 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     errorMessage,
     isBusy,
     uploadingLabel,
+    isUploadLimitReached,
+    maxCount,
+    uploadedCount,
     handleFileInputChange,
   };
 }
