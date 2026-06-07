@@ -65,7 +65,9 @@ function parseMultipart(
   const end = Buffer.from(`--${boundary}--`);
   const nl = Buffer.from('\r\n\r\n');
 
-  let pos = body.indexOf(sep) + sep.length + 2;
+  const firstSep = body.indexOf(sep);
+  if (firstSep === -1) return parts;
+  let pos = firstSep + sep.length + 2;
   while (pos < body.length) {
     const remaining = body.subarray(pos);
     if (remaining.indexOf(end) === 0) break;
