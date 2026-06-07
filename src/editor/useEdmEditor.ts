@@ -326,6 +326,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
       const embedValue = await buildEmbedValue(file, kind, result);
       quill.insertEmbed(insertIndex, getBlotName(kind), embedValue, 'user');
       quill.setSelection(insertIndex + 1, 0, 'silent');
+      pendingCount--;
       syncHtmlFromEditor();
       emit('upload-success', { file, kind, result });
       return insertIndex + 1;
@@ -481,8 +482,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit) {
     const html = getEditorHtml();
     lastHtml.value = html;
     const attachments = extractAttachments();
-    committedCount.value = attachments.length; // 同步实际嵌入数量
-    pendingCount = 0; // 所有 pending 已提交
+    committedCount.value = attachments.length;
     emit('update:modelValue', html);
     emit('change', html);
     emit('update:attachmentList', attachments);
