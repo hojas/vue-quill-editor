@@ -1,4 +1,4 @@
-import { head } from '@vercel/blob';
+import { list } from '@vercel/blob';
 
 export default async function handler(req: import('http').IncomingMessage, res: import('http').ServerResponse) {
   if (req.method !== 'GET') {
@@ -18,7 +18,7 @@ export default async function handler(req: import('http').IncomingMessage, res: 
       return res.end(JSON.stringify({ error: '缺少文件 ID' }));
     }
 
-    const { blobs } = await head({ prefix: id });
+    const { blobs } = await list({ prefix: id, limit: 1 });
     if (blobs.length === 0) {
       res.statusCode = 404;
       res.setHeader('Content-Type', 'application/json');

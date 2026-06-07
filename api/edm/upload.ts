@@ -31,10 +31,10 @@ export default async function handler(req: import('http').IncomingMessage, res: 
       return res.end(JSON.stringify({ error: '未找到上传文件' }));
     }
 
-    // 保存到 Vercel Blob
+    // 保存到 Vercel Blob，返回 URL 供前端直接使用
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const mimeType = filePart.contentType || 'application/octet-stream';
-    await put(id, Buffer.from(filePart.data), {
+    const blob = await put(id, Buffer.from(filePart.data), {
       access: 'public',
       contentType: mimeType,
     });
@@ -44,6 +44,7 @@ export default async function handler(req: import('http').IncomingMessage, res: 
     return res.end(JSON.stringify({
       edmId: id,
       attachmentId: parseInt(id.split('-')[0], 10),
+      url: blob.url,
       fileName: filePart.filename || 'download',
       mimeType,
       size: filePart.data.length,
