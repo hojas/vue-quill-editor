@@ -25,12 +25,48 @@ async function fetchEdmConfig() {
   return res.ok ? res.json() : { maxCount: 5 }
 }
 
-/** 对接后端下载接口，通过 fetch 获取文件并返回 Blob */
-async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise<Blob> {
+/** 对接后端下载接口，通过 fetch 获取文件并返回 Blob（供图片/视频预览使用） */
+async function resolvePreviewUrl(_attachmentId: string, edmId: string): Promise<Blob> {
+  const res = await fetch(`/api/edm/${encodeURIComponent(edmId)}/download`)
+  if (!res.ok)
+    throw new Error(`预览加载失败: ${res.status}`)
+  return res.blob()
+}
+
+/** 对接后端下载接口，fetch 文件后通过 showSaveFilePicker 触发浏览器下载 */
+async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise<string> {
   const res = await fetch(`/api/edm/${encodeURIComponent(edmId)}/download`)
   if (!res.ok)
     throw new Error(`下载失败: ${res.status}`)
-  return res.blob()
+  const blob = await res.blob()
+
+  // 提取文件名
+  const disposition = res.headers.get('Content-Disposition') || ''
+  const match = disposition.match(/filename\*=UTF-8''(.+)/)
+  const fileName = match ? decodeURIComponent(match[1]) : `file-${edmId}`
+
+  // File System Access API — 弹出系统"另存为"对话框
+  if ('showSaveFilePicker' in window) {
+    try {
+      const handle = await window.showSaveFilePicker({ suggestedName: fileName })
+      const writable = await handle.createWritable()
+      await writable.write(blob)
+      await writable.close()
+      return ''
+    }
+    catch { /* 用户取消 */ return '' }
+  }
+
+  // 回退：<a download>（Firefox 等）
+  const blobUrl = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = blobUrl
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+  return ''
 }
 </script>
 
@@ -53,6 +89,7 @@ async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise
           v-model:attachment-list="attachments"
           :upload="uploadEdm"
           :fetch-config="fetchEdmConfig"
+          :resolve-preview-url="resolvePreviewUrl"
           :resolve-download-url="resolveDownloadUrl"
         />
       </section>
@@ -64,6 +101,7 @@ async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise
         <EdmContentViewer
           class="app-preview"
           :content="content"
+          :resolve-preview-url="resolvePreviewUrl"
           :resolve-download-url="resolveDownloadUrl"
         />
       </section>

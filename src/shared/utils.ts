@@ -60,20 +60,3 @@ export function toUrl(resolved: string | Blob | undefined, kind?: EdmUploadKind)
   }
   return resolved || ''
 }
-
-/**
- * 触发浏览器下载文件。
- *
- * url 应为 blob: URL（由 toUrl(Blob) 生成），直接通过 <a download> 触发下载。
- *
- * @param url      - blob: URL
- * @param fileName - 保存到本地的文件名
- */
-export function downloadFile(url: string, fileName: string): void {
-  const a = document.createElement('a')
-  a.href = url
-  a.download = fileName
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-}

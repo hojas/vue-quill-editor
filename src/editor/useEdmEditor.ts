@@ -37,6 +37,9 @@ export interface UseEdmEditorProps {
   upload: EdmUploadHandler
   /** 获取编辑器配置（如最大上传数量） */
   fetchConfig?: () => Promise<EdmConfig>
+  /** 图片/视频预览 URL 解析器 */
+  resolvePreviewUrl?: EdmUrlResolver
+  /** 文件下载解析器（点击文件时调用） */
   resolveDownloadUrl?: EdmUrlResolver
   imageAccept: string
   videoAccept: string
@@ -145,7 +148,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
   // ---- lifecycle ----
   onMounted(async () => {
     registerEdmBlots()
-    setEdmUrlResolvers(props.resolveDownloadUrl)
+    setEdmUrlResolvers(props.resolvePreviewUrl, props.resolveDownloadUrl)
 
     // 获取上传限制配置（由外部注入）
     if (props.fetchConfig) {
@@ -383,9 +386,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     kind: EdmUploadKind,
     result: EdmUploadResult,
   ): Promise<EdmEmbedValue> {
-    const resolved = result.downloadUrl
-      || result.url
-      || (await props.resolveDownloadUrl?.('', result.edmId, kind, result))
+    // 图片/视频：通过 resolvePreviewUrl 获取预览 URL；文件：无需预解析（点击时调 resolveDownloadUrl）
+    const resolved = kind !== 'file'
+      ? (result.downloadUrl || result.url || (await props.resolvePreviewUrl?.('', result.edmId, kind, result)))
+      : (result.downloadUrl || result.url || '')
     const url = toUrl(resolved, kind)
 
     return {
@@ -418,16 +422,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
           return
 
         if (kind === 'file') {
-          // 文件类型：解析下载 URL 并更新链接
-          const attachmentIdRaw = el.getAttribute('data-attachment-id')
-          const url = toUrl(await props.resolveDownloadUrl?.(
-            attachmentIdRaw || '',
-            edmId,
-            kind,
-          ), kind)
+          // 文件类型：清除旧的 href（下载由 resolveDownloadUrl 在点击时处理）
           const link = el.querySelector('a')
           if (link)
-            link.setAttribute('href', url)
+            link.setAttribute('href', '#')
         }
         else {
           // 图片/视频：清除旧的 data-src，触发 IntersectionObserver 重新懒加载

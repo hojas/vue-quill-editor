@@ -1,6 +1,6 @@
 import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../shared/types'
 import Quill from 'quill'
-import { downloadFile, toUrl } from '../shared/utils'
+import { toUrl } from '../shared/utils'
 import { attachResizeHandles } from './imageResize'
 
 // ============================================================
@@ -9,16 +9,22 @@ import { attachResizeHandles } from './imageResize'
 
 /** 编辑器内的懒加载观察器（单例） */
 let lazyObserver: IntersectionObserver | null = null
-/** 外部注入的下载 URL 解析器，在图片/视频进入视口时调用 */
+/** 外部注入的预览 URL 解析器，在图片/视频进入视口时调用 */
 let resolveUrlResolver: EdmUrlResolver | undefined
+/** 外部注入的文件下载解析器，在点击文件时调用 */
+let resolveDownloadResolver: EdmUrlResolver | undefined
 
 /**
- * 注入 URL 解析器，供懒加载时调用。
+ * 注入 URL 解析器，供懒加载和文件下载时调用。
  *
  * 由 `useEdmEditor` 在 onMounted 中调用一次。
  */
-export function setEdmUrlResolvers(resolver?: EdmUrlResolver): void {
-  resolveUrlResolver = resolver
+export function setEdmUrlResolvers(
+  previewResolver?: EdmUrlResolver,
+  downloadResolver?: EdmUrlResolver,
+): void {
+  resolveUrlResolver = previewResolver
+  resolveDownloadResolver = downloadResolver
 }
 
 /**
@@ -342,9 +348,11 @@ export class EdmFileBlot extends BlockEmbed {
     link.addEventListener('click', (event) => {
       event.preventDefault()
       event.stopPropagation()
-      const url = link.getAttribute('href')
-      if (url)
-        downloadFile(url, fileName)
+      void resolveDownloadResolver?.(
+        link.getAttribute('data-attachment-id') || '',
+        normalizedValue.edmId,
+        'file',
+      )
     })
     setCommonAttributes(link, normalizedValue, 'file')
     node.append(link)

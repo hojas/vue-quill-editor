@@ -2,11 +2,12 @@
 import type { EdmUploadKind, EdmUrlResolver } from '../shared/types'
 
 import { nextTick, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
-import { downloadFile, toUrl } from '../shared/utils'
+import { toUrl } from '../shared/utils'
 import 'quill/dist/quill.snow.css'
 
 const props = defineProps<{
   content: string
+  resolvePreviewUrl?: EdmUrlResolver
   resolveDownloadUrl?: EdmUrlResolver
 }>()
 
@@ -96,20 +97,10 @@ async function refreshEmbeds(): Promise<void> {
       const attachmentIdRaw = el.getAttribute('data-attachment-id') || ''
 
       if (kind === 'file') {
+        // 文件不预解析 URL —— 下载由 resolveDownloadUrl 在点击时处理
         const link = el.querySelector('a')
-        if (!link)
-          return
-        // 已有有效 href 则跳过（blob: URL 是会话级的，需重新解析）
-        const currentHref = link.getAttribute('href')
-        if (currentHref && currentHref !== '#' && !currentHref.startsWith('blob:'))
-          return
-        const url = toUrl(await props.resolveDownloadUrl?.(
-          attachmentIdRaw || '',
-          edmId,
-          kind,
-        ), kind)
-        if (url)
-          link.setAttribute('href', url)
+        if (link)
+          link.setAttribute('href', '#')
       }
       else {
         const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video')
@@ -123,7 +114,7 @@ async function refreshEmbeds(): Promise<void> {
           return
         }
 
-        const url = toUrl(await props.resolveDownloadUrl?.(
+        const url = toUrl(await props.resolvePreviewUrl?.(
           attachmentIdRaw || '',
           edmId,
           kind,
@@ -145,23 +136,19 @@ async function refreshEmbeds(): Promise<void> {
  * 拦截 `[data-edm-type="file"]` 上的点击，以 blob 方式触发下载，
  * 失败时降级为新窗口打开。
  */
-async function handleFileDownload(event: MouseEvent): Promise<void> {
+function handleFileDownload(event: MouseEvent): void {
   const target = event.target as HTMLElement
   const fileEl = target.closest<HTMLElement>('[data-edm-type="file"]')
   if (!fileEl)
     return
 
-  const link = fileEl.querySelector('a')
-  if (!link)
-    return
-
   event.preventDefault()
   event.stopPropagation()
 
-  const url = link.getAttribute('href')
-  const fileName = fileEl.getAttribute('data-file-name') || 'download'
-  if (url)
-    downloadFile(url, fileName)
+  const edmId = fileEl.getAttribute('data-edm-id')
+  const attachmentId = fileEl.getAttribute('data-attachment-id') || ''
+  if (edmId)
+    void props.resolveDownloadUrl?.(attachmentId, edmId, 'file')
 }
 </script>
 

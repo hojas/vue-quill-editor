@@ -28,7 +28,9 @@ const props = withDefaults(
     upload: EdmUploadHandler
     /** 获取编辑器配置（如最大上传数量，返回 { maxCount }） */
     fetchConfig?: () => Promise<EdmConfig>
-    /** 下载/展示 URL 解析器（图片/视频/文件） */
+    /** 图片/视频预览 URL 解析器 */
+    resolvePreviewUrl?: EdmUrlResolver
+    /** 文件下载解析器（点击文件时调用，由外部实现下载逻辑） */
     resolveDownloadUrl?: EdmUrlResolver
     /** 图片上传 accept 属性 */
     imageAccept?: string
