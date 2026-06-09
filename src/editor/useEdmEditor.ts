@@ -386,10 +386,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     kind: EdmUploadKind,
     result: EdmUploadResult,
   ): Promise<EdmEmbedValue> {
+    const baseUrl = result.downloadUrl || result.url
     // 图片/视频：通过 resolvePreviewUrl 获取预览 URL；文件：无需预解析（点击时调 resolveDownloadUrl）
     const resolved = kind !== 'file'
-      ? (result.downloadUrl || result.url || (await props.resolvePreviewUrl?.('', result.edmId, kind, result)))
-      : (result.downloadUrl || result.url || '')
+      ? (baseUrl || (await props.resolvePreviewUrl?.('', result.edmId, kind, result)))
+      : (baseUrl || '')
     const url = toUrl(resolved, kind)
 
     return {
@@ -406,8 +407,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
   /**
    * 预处理 HTML 中的 EDM 嵌入元素。
    *
-   * 文件类型预解析下载 URL，图片/视频仅清除旧的 data-src，
-   * 交由 IntersectionObserver 在元素进入视口时懒解析预览 URL。
+   * 文件类型清除旧的 href（下载由 resolveDownloadUrl 在点击时处理），
+   * 图片/视频清除旧的 data-src，交由 IntersectionObserver 懒加载。
    */
   async function resolveHtmlEmbeds(html: string): Promise<string> {
     const parser = new DOMParser()

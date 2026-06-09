@@ -77,9 +77,10 @@ onBeforeUnmount(() => {
 
 // ---- 嵌入刷新 ----
 /**
- * 遍历容器中所有 EDM 嵌入元素，解析 URL 并注册到懒加载观察器。
+ * 遍历容器中所有 EDM 嵌入元素。
  *
- * 文件类型直接解析下载 URL；图片/视频写入 data-src 后等待进入视口。
+ * 文件类型不预解析 URL（下载由 resolveDownloadUrl 在点击时处理）；
+ * 图片/视频通过 resolvePreviewUrl 获取 URL 写入 data-src，等待进入视口懒加载。
  */
 async function refreshEmbeds(): Promise<void> {
   if (!containerRef.value)
@@ -133,8 +134,8 @@ async function refreshEmbeds(): Promise<void> {
 /**
  * 文件嵌入的点击事件处理（事件委托）。
  *
- * 拦截 `[data-edm-type="file"]` 上的点击，以 blob 方式触发下载，
- * 失败时降级为新窗口打开。
+ * 拦截 `[data-edm-type="file"]` 上的点击，调用外部注入的
+ * resolveDownloadUrl 处理下载（如 showSaveFilePicker）。
  */
 function handleFileDownload(event: MouseEvent): void {
   const target = event.target as HTMLElement

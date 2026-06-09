@@ -331,7 +331,7 @@ export class EdmFileBlot extends BlockEmbed {
   /**
    * 创建文件下载链接 DOM。
    *
-   * 点击时通过 `downloadFile` 以 blob 方式下载，失败降级为新窗口打开。
+   * 点击时调用外部注入的 resolveDownloadResolver 处理下载。
    */
   static create(value: EdmEmbedValue | string): HTMLElement {
     const normalizedValue = normalizeValue(value)
@@ -349,7 +349,7 @@ export class EdmFileBlot extends BlockEmbed {
       event.preventDefault()
       event.stopPropagation()
       void resolveDownloadResolver?.(
-        link.getAttribute('data-attachment-id') || '',
+        normalizedValue.attachmentId ? String(normalizedValue.attachmentId) : '',
         normalizedValue.edmId,
         'file',
       )
