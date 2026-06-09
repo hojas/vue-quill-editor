@@ -1,6 +1,6 @@
 import type { EdmEmbedValue, EdmUploadKind, EdmUrlResolver } from '../shared/types'
 import Quill from 'quill'
-import { downloadFile } from '../shared/utils'
+import { downloadFile, toUrl } from '../shared/utils'
 import { attachResizeHandles } from './imageResize'
 
 // ============================================================
@@ -75,7 +75,7 @@ async function loadMedia(
   try {
     const attachmentId
       = media.dataset.attachmentId || el.getAttribute('data-attachment-id') || ''
-    const src = await resolveUrlResolver(attachmentId, edmId, kind)
+    const src = toUrl(await resolveUrlResolver(attachmentId, edmId, kind))
     if (!src)
       throw new Error('empty url')
     setMediaHandlers(el, media)
@@ -344,7 +344,7 @@ export class EdmFileBlot extends BlockEmbed {
       event.stopPropagation()
       const url = link.getAttribute('href')
       if (url)
-        void downloadFile(url, fileName)
+        downloadFile(url, fileName)
     })
     setCommonAttributes(link, normalizedValue, 'file')
     node.append(link)

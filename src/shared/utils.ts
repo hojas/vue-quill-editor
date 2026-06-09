@@ -46,28 +46,28 @@ export function getBlotName(kind: EdmUploadKind): string {
 // ============================================================
 
 /**
- * 通过 fetch → blob → 创建临时链接的方式触发浏览器下载。
+ * 将 resolver 返回值转为 URL 字符串。
+ * Blob 通过 URL.createObjectURL 转为 blob URL，字符串原样返回。
+ */
+export function toUrl(resolved: string | Blob | undefined): string {
+  if (resolved instanceof Blob)
+    return URL.createObjectURL(resolved)
+  return resolved || ''
+}
+
+/**
+ * 触发浏览器下载文件。
  *
- * 下载失败时降级为在新窗口打开原始 URL。
+ * url 应为 blob: URL（由 toUrl(Blob) 生成），直接通过 <a download> 触发下载。
  *
- * @param url      - 文件的下载地址
+ * @param url      - blob: URL
  * @param fileName - 保存到本地的文件名
  */
-export async function downloadFile(url: string, fileName: string): Promise<void> {
-  try {
-    const res = await fetch(url)
-    const blob = await res.blob()
-    const blobUrl = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = blobUrl
-    a.download = fileName
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(blobUrl)
-  }
-  catch {
-    // fetch 跨域或网络异常时，降级为直接打开
-    window.open(url, '_blank')
-  }
+export function downloadFile(url: string, fileName: string): void {
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
 }

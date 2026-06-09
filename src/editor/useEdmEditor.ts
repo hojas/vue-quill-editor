@@ -15,6 +15,7 @@ import {
   getBlotName,
   getErrorMessage,
   inferUploadKind,
+  toUrl,
 } from '../shared/utils'
 import { registerEdmBlots, setEdmUrlResolvers } from './edmBlots'
 import { initImageResize, removeAllResizeHandles } from './imageResize'
@@ -382,11 +383,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     kind: EdmUploadKind,
     result: EdmUploadResult,
   ): Promise<EdmEmbedValue> {
-    const url
-      = result.downloadUrl
-        || result.url
-        || (await props.resolveDownloadUrl?.('', result.edmId, kind, result))
-        || ''
+    const resolved = result.downloadUrl
+      || result.url
+      || (await props.resolveDownloadUrl?.('', result.edmId, kind, result))
+    const url = toUrl(resolved)
 
     return {
       edmId: result.edmId,
@@ -420,11 +420,11 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
         if (kind === 'file') {
           // 文件类型：解析下载 URL 并更新链接
           const attachmentIdRaw = el.getAttribute('data-attachment-id')
-          const url = (await props.resolveDownloadUrl?.(
+          const url = toUrl(await props.resolveDownloadUrl?.(
             attachmentIdRaw || '',
             edmId,
             kind,
-          )) || ''
+          ))
           const link = el.querySelector('a')
           if (link)
             link.setAttribute('href', url)

@@ -2,7 +2,7 @@
 import type { EdmUploadKind, EdmUrlResolver } from '../shared/types'
 
 import { nextTick, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
-import { downloadFile } from '../shared/utils'
+import { downloadFile, toUrl } from '../shared/utils'
 import 'quill/dist/quill.snow.css'
 
 const props = defineProps<{
@@ -103,11 +103,11 @@ async function refreshEmbeds(): Promise<void> {
         const currentHref = link.getAttribute('href')
         if (currentHref && currentHref !== '#' && !currentHref.startsWith('blob:'))
           return
-        const url = (await props.resolveDownloadUrl?.(
+        const url = toUrl(await props.resolveDownloadUrl?.(
           attachmentIdRaw || '',
           edmId,
           kind,
-        )) || ''
+        ))
         if (url)
           link.setAttribute('href', url)
       }
@@ -116,18 +116,18 @@ async function refreshEmbeds(): Promise<void> {
         if (!media)
           return
 
-        // 已有 data-src 则跳过重复解析
-        if (media.dataset.src) {
+        // 已有 data-src 则跳过重复解析（blob: URL 是会话级的，需重新解析）
+        if (media.dataset.src && !media.dataset.src.startsWith('blob:')) {
           el.classList.add('ql-edm-loading')
           getViewObserver().observe(el)
           return
         }
 
-        const url = (await props.resolveDownloadUrl?.(
+        const url = toUrl(await props.resolveDownloadUrl?.(
           attachmentIdRaw || '',
           edmId,
           kind,
-        )) || ''
+        ))
         if (!url)
           return
         media.dataset.src = url
@@ -161,7 +161,7 @@ async function handleFileDownload(event: MouseEvent): Promise<void> {
   const url = link.getAttribute('href')
   const fileName = fileEl.getAttribute('data-file-name') || 'download'
   if (url)
-    await downloadFile(url, fileName)
+    downloadFile(url, fileName)
 }
 </script>
 

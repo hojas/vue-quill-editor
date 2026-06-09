@@ -88,7 +88,7 @@ export type EdmUrlResolver = (
   edmId: string,
   kind: EdmUploadKind,
   result?: EdmUploadResult,
-) => string | Promise<string>
+) => string | Blob | Promise<string | Blob>
 
 /** `upload-start` / `upload-error` 事件的 payload */
 export interface EdmUploadEventPayload {
