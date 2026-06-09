@@ -55,7 +55,7 @@ export interface UseEdmEditorReturn {
   isUploadLimitReached: ComputedRef<boolean>
   maxCount: Ref<number>
   uploadedCount: ComputedRef<number>
-  handleFileInputChange: (e: Event) => void
+  handleFileInputChange: (kind: EdmUploadKind, e: Event) => void
 }
 
 /**
