@@ -75,7 +75,7 @@ async function loadMedia(
   try {
     const attachmentId
       = media.dataset.attachmentId || el.getAttribute('data-attachment-id') || ''
-    const src = toUrl(await resolveUrlResolver(attachmentId, edmId, kind))
+    const src = toUrl(await resolveUrlResolver(attachmentId, edmId, kind), kind)
     if (!src)
       throw new Error('empty url')
     setMediaHandlers(el, media)

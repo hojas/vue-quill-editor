@@ -386,7 +386,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     const resolved = result.downloadUrl
       || result.url
       || (await props.resolveDownloadUrl?.('', result.edmId, kind, result))
-    const url = toUrl(resolved)
+    const url = toUrl(resolved, kind)
 
     return {
       edmId: result.edmId,
@@ -424,7 +424,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
             attachmentIdRaw || '',
             edmId,
             kind,
-          ))
+          ), kind)
           const link = el.querySelector('a')
           if (link)
             link.setAttribute('href', url)

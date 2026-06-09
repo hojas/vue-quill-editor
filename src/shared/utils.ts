@@ -47,11 +47,17 @@ export function getBlotName(kind: EdmUploadKind): string {
 
 /**
  * 将 resolver 返回值转为 URL 字符串。
- * Blob 通过 URL.createObjectURL 转为 blob URL，字符串原样返回。
+ *
+ * Blob 通过 URL.createObjectURL 转为 blob URL。
+ * kind === 'file' 时强制 `application/octet-stream` 以触发浏览器下载而非内联打开。
  */
-export function toUrl(resolved: string | Blob | undefined): string {
-  if (resolved instanceof Blob)
-    return URL.createObjectURL(resolved)
+export function toUrl(resolved: string | Blob | undefined, kind?: EdmUploadKind): string {
+  if (resolved instanceof Blob) {
+    const blob = kind === 'file'
+      ? new Blob([resolved], { type: 'application/octet-stream' })
+      : resolved
+    return URL.createObjectURL(blob)
+  }
   return resolved || ''
 }
 

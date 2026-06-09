@@ -107,7 +107,7 @@ async function refreshEmbeds(): Promise<void> {
           attachmentIdRaw || '',
           edmId,
           kind,
-        ))
+        ), kind)
         if (url)
           link.setAttribute('href', url)
       }
@@ -127,7 +127,7 @@ async function refreshEmbeds(): Promise<void> {
           attachmentIdRaw || '',
           edmId,
           kind,
-        ))
+        ), kind)
         if (!url)
           return
         media.dataset.src = url
