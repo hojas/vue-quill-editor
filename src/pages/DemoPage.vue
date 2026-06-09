@@ -25,13 +25,9 @@ async function fetchEdmConfig() {
   return res.ok ? res.json() : { maxCount: 5 }
 }
 
-/** 对接后端下载接口，通过 fetch 获取文件并返回 blob URL */
-async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise<string> {
-  const res = await fetch(`/api/edm/${encodeURIComponent(edmId)}/download`)
-  if (!res.ok)
-    throw new Error(`下载失败: ${res.status}`)
-  const blob = await res.blob()
-  return URL.createObjectURL(blob)
+/** 对接后端下载接口，返回 API 端点 URL，由 downloadFile 负责 fetch 并触发下载 */
+function resolveDownloadUrl(_attachmentId: string, edmId: string): string {
+  return `/api/edm/${encodeURIComponent(edmId)}/download`
 }
 </script>
 

@@ -99,8 +99,9 @@ async function refreshEmbeds(): Promise<void> {
         const link = el.querySelector('a')
         if (!link)
           return
-        // 已有有效 href 则跳过
-        if (link.getAttribute('href') && link.getAttribute('href') !== '#')
+        // 已有有效 href 则跳过（blob: URL 是会话级的，需重新解析）
+        const currentHref = link.getAttribute('href')
+        if (currentHref && currentHref !== '#' && !currentHref.startsWith('blob:'))
           return
         const url = (await props.resolveDownloadUrl?.(
           attachmentIdRaw || '',
