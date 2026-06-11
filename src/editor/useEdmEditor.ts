@@ -440,6 +440,65 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     return doc.body.innerHTML
   }
 
+  /**
+   * 检查文本节点是否位于受保护的子树中（不应修改其空白字符）。
+   *
+   * - `<pre>` — Quill 已通过 `isPre` 保留其空白（clipboard.js:455）
+   * - `<code>` — 内联代码中的空格可能具有意义
+   * - `[data-edm-type]` — EDM 自定义元素有内部结构，不应修改
+   */
+  function isProtectedTextNode(node: Text): boolean {
+    let parent = node.parentElement
+    while (parent) {
+      const tag = parent.tagName
+      if (tag === 'PRE' || tag === 'CODE')
+        return true
+      if (parent.hasAttribute('data-edm-type'))
+        return true
+      parent = parent.parentElement
+    }
+    return false
+  }
+
+  /**
+   * 保留 HTML 文本节点中的连续空白字符。
+   *
+   * Quill 的 clipboard 模块在 `dangerouslyPasteHTML` 时会将 2 个以上连续空格折叠为 1 个。
+   * 这里将连续空白替换为交替 ` `（U+00A0）和 ` ` 的模式，
+   * 利用 Quill 先折叠空格、后转换 ` ` 为空格的处理顺序来保留原始空白数量。
+   *
+   * 受 `isProtectedTextNode` 保护的子树不会被修改。
+   *
+   * @param html - 原始 HTML 字符串
+   * @returns 连续空白已被保留的 HTML
+   */
+  function preserveConsecutiveSpaces(html: string): string {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, 'text/html')
+
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT)
+    const textNodes: Text[] = []
+
+    // 先收集所有符合条件的文本节点，避免遍历中修改导致节点跳过
+    while (walker.nextNode()) {
+      const node = walker.currentNode as Text
+      if (!isProtectedTextNode(node)) {
+        textNodes.push(node)
+      }
+    }
+
+    for (const node of textNodes) {
+      node.nodeValue = node.nodeValue!.replace(
+        /\s{2,}/g,
+        (run: string) =>
+          run.replace(/./g, (_ch: string, i: number) =>
+            i % 2 === 0 ? ' ' : ' '),
+      )
+    }
+
+    return doc.body.innerHTML
+  }
+
   // ---- paste ----
   /**
    * 粘贴事件处理：提取剪贴板中的文件并插入编辑器。
@@ -471,8 +530,9 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     if (!quill)
       return
     const resolvedHtml = await resolveHtmlEmbeds(html)
+    const preservedHtml = preserveConsecutiveSpaces(resolvedHtml)
     quill.off('text-change', syncHtmlFromEditor)
-    quill.clipboard.dangerouslyPasteHTML(resolvedHtml, 'silent')
+    quill.clipboard.dangerouslyPasteHTML(preservedHtml, 'silent')
     quill.on('text-change', syncHtmlFromEditor)
     ensureTrailingParagraph()
     syncHtmlFromEditor()
