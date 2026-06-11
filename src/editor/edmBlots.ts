@@ -151,6 +151,8 @@ function normalizeValue(value: EdmEmbedValue | string): EdmEmbedValue {
     name: value.name,
     mimeType: value.mimeType,
     size: value.size,
+    width: value.width,
+    height: value.height,
   }
 }
 
