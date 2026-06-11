@@ -8,7 +8,7 @@ import EdmContentViewer from '../viewer/EdmContentViewer.vue'
 const content = ref()
 
 setTimeout(() => {
-  content.value = ref('<p>欢迎编辑 EDM 内容。</p><edm-image class="ql-edm-image ql-edm-loaded" data-edm-id="1781193873184-3ufx39xl" data-edm-type="image" data-attachment-id="1781193873184" data-file-name="a.png" title="a.png" data-mime-type="image/png" data-file-size="252"><img data-src="https://c8mqsr1j97cqhcch.public.blob.vercel-storage.com/1781193873184-3ufx39xl" alt="a.png" data-edm-id="1781193873184-3ufx39xl" data-edm-type="image" data-attachment-id="1781193873184" data-file-name="a.png" title="a.png" data-mime-type="image/png" data-file-size="252" src="https://c8mqsr1j97cqhcch.public.blob.vercel-storage.com/1781193873184-3ufx39xl" style="width: 213px; height: 258px; max-width: none;"></edm-image><p><br></p>')
+  content.value = '<p>欢迎编辑 EDM 内容。</p><edm-image class="ql-edm-image ql-edm-loaded" data-edm-id="1781193873184-3ufx39xl" data-edm-type="image" data-attachment-id="1781193873184" data-file-name="a.png" title="a.png" data-mime-type="image/png" data-file-size="252"><img data-src="https://c8mqsr1j97cqhcch.public.blob.vercel-storage.com/1781193873184-3ufx39xl" alt="a.png" data-edm-id="1781193873184-3ufx39xl" data-edm-type="image" data-attachment-id="1781193873184" data-file-name="a.png" title="a.png" data-mime-type="image/png" data-file-size="252" src="https://c8mqsr1j97cqhcch.public.blob.vercel-storage.com/1781193873184-3ufx39xl" style="width: 213px; height: 258px; max-width: none;"></edm-image><p><br></p>'
 }, 1000)
 
 /** 编辑器中已使用的 EDM 附件列表 */
