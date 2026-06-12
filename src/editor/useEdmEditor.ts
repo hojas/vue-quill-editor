@@ -15,6 +15,7 @@ import {
   getBlotName,
   getErrorMessage,
   inferUploadKind,
+  isEdmBlot,
   toUrl,
 } from '../shared/utils'
 import { registerEdmBlots, setEdmUrlResolvers } from './edmBlots'
@@ -129,6 +130,88 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     e.stopImmediatePropagation()
   }
 
+  /**
+   * 拦截 Backspace / Delete 按键，处理 EDM 嵌入元素的删除。
+   *
+   * Quill 默认的 Backspace 处理器不认识自定义 BlockEmbed，
+   * 当光标在 embed 之后时会将 embed 所在的 Block 与上一个 Block 合并，而不是删除 embed。
+   * 这里在 capture 阶段拦截，直接用 deleteText 删除 embed。
+   *
+   * Backspace 同时检查 getLeaf(I-1) 和 getLeaf(I)，后者作为 Quill 的
+   * normalizedToRange() 缺陷（将 rightGuard 的 offset=0 映射到位置 I 而非 I+1）的兜底。
+   */
+  const handleEdmKeyboard = (evt: KeyboardEvent): void => {
+    if (evt.key !== 'Backspace' && evt.key !== 'Delete')
+      return
+    if (!quill)
+      return
+
+    const range = quill.getSelection()
+    if (!range || range.length > 0)
+      return
+
+    const candidates: number[] = evt.key === 'Backspace' && range.index > 0
+      ? [range.index - 1, range.index]
+      : evt.key === 'Delete' && range.index < quill.getLength() - 1
+        ? [range.index]
+        : []
+
+    for (const idx of candidates) {
+      const [leaf] = quill.getLeaf(idx)
+      if (leaf && isEdmBlot(leaf)) {
+        evt.preventDefault()
+        evt.stopImmediatePropagation()
+        quill.deleteText(idx, 1, Quill.sources.USER)
+        return
+      }
+    }
+  }
+
+  /**
+   * 当用户点击 BlockEmbed 右侧空白区域时，浏览器将光标放在 Quill 在 embed 内部
+   * 插入的 rightGuard（U+FEFF）文本节点上。Quill 的 normalizedToRange() 在 offset=0
+   * 时走捷径直接返回 embed 位置 I，而非调用 Embed.index() 得到正确的 I+1。
+   *
+   * 此处理器检测 user 来源的选区变更，若光标落在 EDM embed 上，则通过原生 DOM
+   * 选区判断用户是否点击在 embed 右侧，仅在该情况下将光标修正到 I+1。
+   */
+  const handleSelectionChange = (range: unknown, _oldRange: unknown, source: string): void => {
+    if (!quill || source !== 'user')
+      return
+    const sel = range as { index: number, length: number } | null
+    if (!sel || sel.length > 0)
+      return
+
+    const [leaf] = quill.getLeaf(sel.index)
+    if (!leaf || !isEdmBlot(leaf))
+      return
+
+    const embedDom = (leaf as any).domNode as HTMLElement | null
+    if (!embedDom)
+      return
+
+    const nativeSel = window.getSelection()
+    if (!nativeSel || nativeSel.rangeCount === 0)
+      return
+
+    const nativeContainer = nativeSel.getRangeAt(0).startContainer
+    const pos = embedDom.compareDocumentPosition(nativeContainer)
+
+    // FOLLOWING (4): 光标在 embed 之后
+    // CONTAINED_BY (16): 光标在 embed 内部的 rightGuard 上 → 需要进一步判断
+    const isRightSide
+      = (pos & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+        || (
+          (pos & Node.DOCUMENT_POSITION_CONTAINED_BY) !== 0
+          && (embedDom.querySelector('[contenteditable="false"]')
+            ?.compareDocumentPosition(nativeContainer) ?? 0) & Node.DOCUMENT_POSITION_FOLLOWING
+        )
+
+    if (isRightSide) {
+      quill.setSelection(sel.index + 1, 0, 'silent')
+    }
+  }
+
   // ---- computed ----
   /** 是否有上传正在进行 */
   const isBusy = computed(() => uploadingKind.value !== null)
@@ -182,6 +265,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     addToolbarTitles()
     initImageResize(quill.root)
     quill.on('text-change', syncHtmlFromEditor)
+    quill.on('selection-change', handleSelectionChange)
+    quill.root.addEventListener('keydown', handleEdmKeyboard, true)
     quill.root.addEventListener('paste', handlePaste, true)
     quill.root.addEventListener('dragstart', blockDragStart)
     quill.root.addEventListener('dragover', blockDragOver, true)
@@ -200,6 +285,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     if (!quill)
       return
     quill.off('text-change', syncHtmlFromEditor)
+    quill.off('selection-change', handleSelectionChange)
+    quill.root.removeEventListener('keydown', handleEdmKeyboard, true)
     quill.root.removeEventListener('paste', handlePaste, true)
     quill.root.removeEventListener('dragstart', blockDragStart)
     quill.root.removeEventListener('dragover', blockDragOver, true)
@@ -333,6 +420,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
         continue
       }
     }
+    ensureTrailingParagraph()
   }
 
   // ---- upload & embed ----
@@ -541,12 +629,20 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
   /**
    * 确保编辑器末尾存在一个换行段落。
    *
-   * 如果编辑器以 EDM embed 结尾，缺少换行会导致光标无法定位到 embed 之后。
+   * 仅在最后一个内容元素是 EDM embed 时才插入额外换行，
+   * 避免 embed 之后无文本节点导致光标无法正确定位和删除。
    */
   function ensureTrailingParagraph(): void {
     if (!quill)
       return
-    quill.insertText(quill.getLength(), '\n', 'api')
+    // Quill 末尾始终有一个保留换行符，实际内容的最后位置在 length - 2
+    const lastContentIndex = quill.getLength() - 2
+    if (lastContentIndex < 0)
+      return
+    const [leaf] = quill.getLeaf(lastContentIndex)
+    if (leaf && isEdmBlot(leaf)) {
+      quill.insertText(quill.getLength() - 1, '\n', 'silent')
+    }
   }
 
   // ---- HTML sync ----
