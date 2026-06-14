@@ -41,6 +41,19 @@ export function getBlotName(kind: EdmUploadKind): string {
   return 'edmFile'
 }
 
+/** 所有 EDM 自定义 blot 名称集合，用于 blot 类型判断。 */
+export const EDM_BLOT_NAMES: ReadonlySet<string> = new Set(['edmImage', 'edmVideo', 'edmFile'])
+
+/**
+ * 判断一个 Quill blot 是否为 EDM 嵌入元素（edmImage / edmVideo / edmFile）。
+ *
+ * Quill 的 `getLeaf()` 返回类型不暴露 `statics` 属性，需要 `as any` 桥接。
+ * 此函数集中处理该类型转换，避免调用方重复。
+ */
+export function isEdmBlot(leaf: unknown): boolean {
+  return EDM_BLOT_NAMES.has((leaf as any)?.statics?.blotName)
+}
+
 // ============================================================
 // 下载工具
 // ============================================================
