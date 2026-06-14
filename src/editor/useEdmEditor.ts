@@ -141,10 +141,24 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
    * normalizedToRange() 缺陷（将 rightGuard 的 offset=0 映射到位置 I 而非 I+1）的兜底。
    */
   const handleEdmKeyboard = (evt: KeyboardEvent): void => {
-    if (evt.key !== 'Backspace' && evt.key !== 'Delete')
+    if (evt.key !== 'Backspace' && evt.key !== 'Delete' && evt.key !== 'Enter')
       return
     if (!quill)
       return
+
+    // Enter: 如果光标落在 EDM embed 上（位置 I），则先修正到 I+1，
+    // 让 Quill 的原生 Enter 处理器在正确的位置插入换行（embed 下方）。
+    // 不调用 preventDefault，让 Quill 自己处理 Enter。
+    if (evt.key === 'Enter') {
+      const enterRange = quill.getSelection()
+      if (enterRange && enterRange.length === 0) {
+        const [leaf] = quill.getLeaf(enterRange.index)
+        if (leaf && isEdmBlot(leaf)) {
+          quill.setSelection(enterRange.index + 1, 0, 'silent')
+        }
+      }
+      return
+    }
 
     const range = quill.getSelection()
     if (!range || range.length > 0)
