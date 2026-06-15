@@ -177,6 +177,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
         evt.preventDefault()
         evt.stopImmediatePropagation()
         quill.deleteText(idx, 1, Quill.sources.USER)
+        ensureLeadingParagraph()
         return
       }
     }
@@ -224,6 +225,15 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
 
     if (isRightSide) {
       quill.setSelection(sel.index + 1, 0, 'silent')
+      return
+    }
+
+    // 光标落在 embed 的左侧：仅在 embed 位于编辑器最开头（position 0）时需要处理。
+    // 此时 embed 前方无文本节点，浏览器无法将光标落在 embed 之前，
+    // 需要插入一个前导段落来创建可输入文本的位置。
+    if (sel.index === 0) {
+      quill.insertText(0, '\n', 'silent')
+      quill.setSelection(0, 0, 'silent')
     }
   }
 
@@ -448,6 +458,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
         continue
       }
     }
+    ensureLeadingParagraph()
     ensureTrailingParagraph()
   }
 
@@ -650,8 +661,24 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     quill.off('text-change', syncHtmlFromEditor)
     quill.clipboard.dangerouslyPasteHTML(preservedHtml, 'silent')
     quill.on('text-change', syncHtmlFromEditor)
+    ensureLeadingParagraph()
     ensureTrailingParagraph()
     syncHtmlFromEditor()
+  }
+
+  /**
+   * 确保编辑器开头存在一个换行段落。
+   *
+   * 仅在第一个内容元素是 EDM embed 时才在位置 0 插入换行，
+   * 避免 embed 之前无文本节点导致光标无法定位到 embed 前方。
+   */
+  function ensureLeadingParagraph(): void {
+    if (!quill)
+      return
+    const [leaf] = quill.getLeaf(0)
+    if (leaf && isEdmBlot(leaf)) {
+      quill.insertText(0, '\n', 'silent')
+    }
   }
 
   /**
