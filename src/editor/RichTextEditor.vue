@@ -288,6 +288,47 @@ const {
   font-family: '仿宋', FangSong, serif;
 }
 
+/* ---- 西文字体定义 ---- */
+:deep(.ql-font-arial) {
+  font-family: Arial, sans-serif;
+}
+
+:deep(.ql-font-times-new-roman) {
+  font-family: 'Times New Roman', Times, serif;
+}
+
+:deep(.ql-font-sans-serif) {
+  font-family: sans-serif;
+}
+
+/* ---- 西文字体选择器标签 ---- */
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="arial"]::before) {
+  content: 'Arial';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="arial"]::before) {
+  content: 'Arial';
+  font-family: Arial, sans-serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times-new-roman"]::before) {
+  content: 'Times New Roman';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before) {
+  content: 'Times New Roman';
+  font-family: 'Times New Roman', Times, serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="sans-serif"]::before) {
+  content: 'sans-serif';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="sans-serif"]::before) {
+  content: 'sans-serif';
+  font-family: sans-serif;
+}
+
 @keyframes rich-editor-spin {
   to {
     transform: rotate(360deg);

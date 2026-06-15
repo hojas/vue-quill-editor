@@ -19,7 +19,7 @@ import {
   toUrl,
 } from '../shared/utils'
 import { registerEdmBlots, setEdmUrlResolvers } from './edmBlots'
-import { CHINESE_FONTS, registerFonts } from './fonts'
+import { CUSTOM_FONTS, registerFonts } from './fonts'
 import { initImageResize, removeAllResizeHandles } from './imageResize'
 
 /**
@@ -79,7 +79,7 @@ export interface UseEdmEditorEmit {
 
 /** Quill 工具栏配置，包含自定义的 EDM 插入按钮 */
 const toolbarConfig = [
-  [{ header: [1, 2, false] }, { font: Object.keys(CHINESE_FONTS) }],
+  [{ header: [1, 2, false] }, { font: Object.keys(CUSTOM_FONTS) }],
   ['bold', 'italic', 'underline', 'strike'],
   [{ list: 'ordered' }, { list: 'bullet' }, 'blockquote', 'code-block'],
   ['link', 'edmImage', 'edmVideo', 'edmFile'],
@@ -373,7 +373,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     if (fontPicker && !fontPicker.hasAttribute('title')) {
       fontPicker.setAttribute('title', '字体')
     }
-    for (const [fontKey, fontName] of Object.entries(CHINESE_FONTS)) {
+    for (const [fontKey, fontName] of Object.entries(CUSTOM_FONTS)) {
       const item = container.querySelector(`.ql-picker-item[data-value="${fontKey}"]`)
       if (item && !item.hasAttribute('title')) {
         item.setAttribute('title', fontName)
