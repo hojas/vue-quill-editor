@@ -19,6 +19,7 @@ import {
   toUrl,
 } from '../shared/utils'
 import { registerEdmBlots, setEdmUrlResolvers } from './edmBlots'
+import { CHINESE_FONTS, registerFonts } from './fonts'
 import { initImageResize, removeAllResizeHandles } from './imageResize'
 
 /**
@@ -78,7 +79,7 @@ export interface UseEdmEditorEmit {
 
 /** Quill 工具栏配置，包含自定义的 EDM 插入按钮 */
 const toolbarConfig = [
-  [{ header: [1, 2, false] }],
+  [{ header: [1, 2, false] }, { font: Object.keys(CHINESE_FONTS) }],
   ['bold', 'italic', 'underline', 'strike'],
   [{ list: 'ordered' }, { list: 'bullet' }, 'blockquote', 'code-block'],
   ['link', 'edmImage', 'edmVideo', 'edmFile'],
@@ -245,6 +246,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
   // ---- lifecycle ----
   onMounted(async () => {
     registerEdmBlots()
+    registerFonts()
     setEdmUrlResolvers(props.resolvePreviewUrl, props.resolveDownloadUrl)
 
     // 获取上传限制配置（由外部注入）
@@ -364,6 +366,18 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
       'ql-edmVideo': '视频',
       'ql-edmFile': '文件',
       'ql-clean': '清除格式',
+    }
+
+    // 为字体选择器和每个字体选项添加中文 title
+    const fontPicker = container.querySelector('.ql-picker.ql-font')
+    if (fontPicker && !fontPicker.hasAttribute('title')) {
+      fontPicker.setAttribute('title', '字体')
+    }
+    for (const [fontKey, fontName] of Object.entries(CHINESE_FONTS)) {
+      const item = container.querySelector(`.ql-picker-item[data-value="${fontKey}"]`)
+      if (item && !item.hasAttribute('title')) {
+        item.setAttribute('title', fontName)
+      }
     }
 
     for (const selector of Object.keys(titles)) {
@@ -566,8 +580,8 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
    * 保留 HTML 文本节点中的连续空白字符。
    *
    * Quill 的 clipboard 模块在 `dangerouslyPasteHTML` 时会将 2 个以上连续空格折叠为 1 个。
-   * 这里将连续空白替换为交替 ` `（U+00A0）和 ` ` 的模式，
-   * 利用 Quill 先折叠空格、后转换 ` ` 为空格的处理顺序来保留原始空白数量。
+   * 这里将连续空白替换为交替 ` `（U+00A0）和 ` ` 的模式，
+   * 利用 Quill 先折叠空格、后转换 ` ` 为空格的处理顺序来保留原始空白数量。
    *
    * 受 `isProtectedTextNode` 保护的子树不会被修改。
    *

@@ -221,6 +221,73 @@ const {
   font-style: normal;
 }
 
+/* ---- 中文字体定义 ---- */
+:deep(.ql-font-songti) {
+  font-family: '宋体', SimSun, serif;
+}
+
+:deep(.ql-font-heiti) {
+  font-family: '黑体', SimHei, sans-serif;
+}
+
+:deep(.ql-font-weiruan-yahei) {
+  font-family: '微软雅黑', 'Microsoft YaHei', sans-serif;
+}
+
+:deep(.ql-font-kaiti) {
+  font-family: '楷体', KaiTi, serif;
+}
+
+:deep(.ql-font-fangsong) {
+  font-family: '仿宋', FangSong, serif;
+}
+
+/* ---- 字体选择器中文标签 ---- */
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="songti"]::before) {
+  content: '宋体';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="songti"]::before) {
+  content: '宋体';
+  font-family: '宋体', SimSun, serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="heiti"]::before) {
+  content: '黑体';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="heiti"]::before) {
+  content: '黑体';
+  font-family: '黑体', SimHei, sans-serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="weiruan-yahei"]::before) {
+  content: '微软雅黑';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="weiruan-yahei"]::before) {
+  content: '微软雅黑';
+  font-family: '微软雅黑', 'Microsoft YaHei', sans-serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="kaiti"]::before) {
+  content: '楷体';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="kaiti"]::before) {
+  content: '楷体';
+  font-family: '楷体', KaiTi, serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="fangsong"]::before) {
+  content: '仿宋';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="fangsong"]::before) {
+  content: '仿宋';
+  font-family: '仿宋', FangSong, serif;
+}
+
 @keyframes rich-editor-spin {
   to {
     transform: rotate(360deg);
