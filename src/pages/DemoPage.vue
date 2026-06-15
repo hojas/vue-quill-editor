@@ -7,6 +7,9 @@ import EdmContentViewer from '../viewer/EdmContentViewer.vue'
 /** 编辑器内容（HTML） */
 const content = ref()
 
+/** 控制编辑器显示/隐藏 */
+const showEditor = ref(true)
+
 setTimeout(() => {
   content.value = '<p>         欢迎编辑 EDM 内容。</p><edm-image class="ql-edm-image ql-edm-loaded" data-edm-id="1781291720721-noh7xqza" data-edm-type="image" data-attachment-id="1781291720721" data-file-name="a.png" title="a.png" data-mime-type="image/png" data-file-size="4565"><img data-src="https://c8mqsr1j97cqhcch.public.blob.vercel-storage.com/1781291720721-noh7xqza" alt="a.png" data-edm-id="1781291720721-noh7xqza" data-edm-type="image" data-attachment-id="1781291720721" data-file-name="a.png" title="a.png" data-mime-type="image/png" data-file-size="4565" src="https://c8mqsr1j97cqhcch.public.blob.vercel-storage.com/1781291720721-noh7xqza"></edm-image><p><br></p><edm-image class="ql-edm-image ql-edm-loaded" data-edm-id="1781193873184-3ufx39xl" data-edm-type="image" data-attachment-id="1781193873184" data-file-name="a.png" title="a.png" data-mime-type="image/png" data-file-size="252"><img data-src="https://c8mqsr1j97cqhcch.public.blob.vercel-storage.com/1781193873184-3ufx39xl" alt="a.png" data-edm-id="1781193873184-3ufx39xl" data-edm-type="image" data-attachment-id="1781193873184" data-file-name="a.png" title="a.png" data-mime-type="image/png" data-file-size="252" style="width: 213px; max-width: none; height: 258px;" src="https://c8mqsr1j97cqhcch.public.blob.vercel-storage.com/1781193873184-3ufx39xl"></edm-image><p><br></p>'
 }, 1000)
@@ -88,8 +91,12 @@ async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise
       <section class="app-pane" aria-label="编辑器">
         <h2 class="app-pane__title">
           编辑
+          <button class="app-pane__toggle" @click="showEditor = !showEditor">
+            {{ showEditor ? '隐藏编辑器' : '显示编辑器' }}
+          </button>
         </h2>
         <RichTextEditor
+          v-if="showEditor"
           v-model="content"
           v-model:attachment-list="attachments"
           :upload="uploadEdm"
@@ -154,10 +161,29 @@ async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise
 }
 
 .app-pane__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 0 0 12px;
   font-size: 14px;
   font-weight: 600;
   color: #4a5b6e;
+}
+
+.app-pane__toggle {
+  padding: 4px 10px;
+  border: 1px solid #cdd9e8;
+  border-radius: 6px;
+  background: #f8fbff;
+  color: #205493;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.app-pane__toggle:hover {
+  border-color: #89aed8;
+  background: #eef6ff;
 }
 
 .app-preview {

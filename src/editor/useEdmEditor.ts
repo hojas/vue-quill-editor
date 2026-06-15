@@ -20,7 +20,7 @@ import {
 } from '../shared/utils'
 import { registerEdmBlots, setEdmUrlResolvers } from './edmBlots'
 import { CUSTOM_FONTS, registerFonts } from './fonts'
-import { initImageResize, removeAllResizeHandles } from './imageResize'
+import { destroyImageResize, initImageResize, removeAllResizeHandles } from './imageResize'
 
 /**
  * `useEdmEditor` 的 props 入参。
@@ -317,6 +317,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
     quill.root.removeEventListener('dragstart', blockDragStart)
     quill.root.removeEventListener('dragover', blockDragOver, true)
     quill.root.removeEventListener('drop', blockDrop, true)
+    destroyImageResize()
     quill = null
   })
 

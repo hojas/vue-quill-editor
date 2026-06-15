@@ -47,6 +47,12 @@ const CURSOR: Record<HandleDir, string> = {
 /** 当前拖拽状态，null 表示未激活 */
 let drag: DragState | null = null
 
+/** MutationObserver 引用，销毁时断开 */
+let observer: MutationObserver | null = null
+
+/** 已注册 mousedown 监听的编辑器根节点，销毁时移除 */
+let boundRoot: HTMLElement | null = null
+
 // ---- 把手 DOM ----
 
 /** 创建单个缩放把手元素 */
@@ -250,6 +256,7 @@ export function initImageResize(editorRoot: HTMLElement): void {
   if (initialized)
     return
   initialized = true
+  boundRoot = editorRoot
 
   // 事件委托：把手 mousedown 在编辑器根节点统一处理
   editorRoot.addEventListener('mousedown', onHandleMouseDown)
@@ -258,7 +265,7 @@ export function initImageResize(editorRoot: HTMLElement): void {
   forEachImageEmbed(editorRoot, attachResizeHandles)
 
   // 监听 DOM 变化，为新插入的图片嵌入附加把手
-  const observer = new MutationObserver((mutations) => {
+  observer = new MutationObserver((mutations) => {
     for (const m of mutations) {
       for (const node of m.addedNodes) {
         if (!(node instanceof HTMLElement))
@@ -274,4 +281,21 @@ export function initImageResize(editorRoot: HTMLElement): void {
   })
 
   observer.observe(editorRoot, { childList: true, subtree: true })
+}
+
+/**
+ * 销毁图片缩放功能，允许编辑器重新挂载时再次初始化。
+ *
+ * 断开 MutationObserver、移除事件监听并重置 initialized 标志。
+ */
+export function destroyImageResize(): void {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
+  if (boundRoot) {
+    boundRoot.removeEventListener('mousedown', onHandleMouseDown)
+    boundRoot = null
+  }
+  initialized = false
 }
