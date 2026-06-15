@@ -221,6 +221,114 @@ const {
   font-style: normal;
 }
 
+/* ---- 中文字体定义 ---- */
+:deep(.ql-font-songti) {
+  font-family: '宋体', SimSun, serif;
+}
+
+:deep(.ql-font-heiti) {
+  font-family: '黑体', SimHei, sans-serif;
+}
+
+:deep(.ql-font-weiruan-yahei) {
+  font-family: '微软雅黑', 'Microsoft YaHei', sans-serif;
+}
+
+:deep(.ql-font-kaiti) {
+  font-family: '楷体', KaiTi, serif;
+}
+
+:deep(.ql-font-fangsong) {
+  font-family: '仿宋', FangSong, serif;
+}
+
+/* ---- 字体选择器中文标签 ---- */
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="songti"]::before) {
+  content: '宋体';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="songti"]::before) {
+  content: '宋体';
+  font-family: '宋体', SimSun, serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="heiti"]::before) {
+  content: '黑体';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="heiti"]::before) {
+  content: '黑体';
+  font-family: '黑体', SimHei, sans-serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="weiruan-yahei"]::before) {
+  content: '微软雅黑';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="weiruan-yahei"]::before) {
+  content: '微软雅黑';
+  font-family: '微软雅黑', 'Microsoft YaHei', sans-serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="kaiti"]::before) {
+  content: '楷体';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="kaiti"]::before) {
+  content: '楷体';
+  font-family: '楷体', KaiTi, serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="fangsong"]::before) {
+  content: '仿宋';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="fangsong"]::before) {
+  content: '仿宋';
+  font-family: '仿宋', FangSong, serif;
+}
+
+/* ---- 西文字体定义 ---- */
+:deep(.ql-font-arial) {
+  font-family: Arial, sans-serif;
+}
+
+:deep(.ql-font-times-new-roman) {
+  font-family: 'Times New Roman', Times, serif;
+}
+
+:deep(.ql-font-sans-serif) {
+  font-family: sans-serif;
+}
+
+/* ---- 西文字体选择器标签 ---- */
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="arial"]::before) {
+  content: 'Arial';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="arial"]::before) {
+  content: 'Arial';
+  font-family: Arial, sans-serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times-new-roman"]::before) {
+  content: 'Times New Roman';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before) {
+  content: 'Times New Roman';
+  font-family: 'Times New Roman', Times, serif;
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="sans-serif"]::before) {
+  content: 'sans-serif';
+}
+
+:deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="sans-serif"]::before) {
+  content: 'sans-serif';
+  font-family: sans-serif;
+}
+
 @keyframes rich-editor-spin {
   to {
     transform: rotate(360deg);
