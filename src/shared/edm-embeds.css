@@ -24,6 +24,16 @@
   border-radius: 8px;
 }
 
+.ql-edm-image.ql-align-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ql-edm-image.ql-align-right {
+  margin-left: auto;
+  margin-right: 0;
+}
+
 /* ---- Image resize handles ---- */
 .ql-edm-image .ql-edm-resize-handle {
   position: absolute;
