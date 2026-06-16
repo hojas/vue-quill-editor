@@ -79,7 +79,7 @@ export interface UseEdmEditorEmit {
 
 /** Quill 工具栏配置，包含自定义的 EDM 插入按钮 */
 const toolbarConfig = [
-  [{ header: [1, 2, false] }, { font: Object.keys(CUSTOM_FONTS) }],
+  [{ header: [1, 2, false] }, { size: ['small', false, 'large', 'huge'] }, { font: Object.keys(CUSTOM_FONTS) }],
   ['bold', 'italic', 'underline', 'strike'],
   [{ align: [] }, { list: 'ordered' }, { list: 'bullet' }, 'blockquote', 'code-block'],
   ['link', 'edmImage', 'edmVideo', 'edmFile'],
@@ -363,6 +363,7 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
       return
 
     const titles: Record<string, string> = {
+      'ql-size': '字号',
       'ql-header': '标题',
       'ql-bold': '加粗',
       'ql-italic': '倾斜',

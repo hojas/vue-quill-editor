@@ -242,6 +242,33 @@ const {
   font-family: '仿宋', FangSong, serif;
 }
 
+/* ---- 标题选择器中文标签 ---- */
+:deep(.ql-snow .ql-picker.ql-header .ql-picker-label::before) {
+  content: '正文';
+}
+
+:deep(.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="1"]::before) {
+  content: '标题 1';
+}
+
+:deep(.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before) {
+  content: '标题 2';
+}
+
+:deep(.ql-snow .ql-picker.ql-header .ql-picker-item::before) {
+  content: '正文';
+}
+
+:deep(.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="1"]::before) {
+  content: '标题 1';
+  font-size: 2em;
+}
+
+:deep(.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before) {
+  content: '标题 2';
+  font-size: 1.5em;
+}
+
 /* ---- 字体选择器中文标签 ---- */
 :deep(.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="songti"]::before) {
   content: '宋体';
@@ -327,6 +354,42 @@ const {
 :deep(.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="sans-serif"]::before) {
   content: 'sans-serif';
   font-family: sans-serif;
+}
+
+/* ---- 字号选择器中文标签 ---- */
+:deep(.ql-snow .ql-picker.ql-size .ql-picker-label::before) {
+  content: '默认';
+}
+
+:deep(.ql-snow .ql-picker.ql-size .ql-picker-label[data-value=small]::before) {
+  content: '小号';
+}
+
+:deep(.ql-snow .ql-picker.ql-size .ql-picker-label[data-value=large]::before) {
+  content: '大号';
+}
+
+:deep(.ql-snow .ql-picker.ql-size .ql-picker-label[data-value=huge]::before) {
+  content: '特大';
+}
+
+:deep(.ql-snow .ql-picker.ql-size .ql-picker-item::before) {
+  content: '默认';
+}
+
+:deep(.ql-snow .ql-picker.ql-size .ql-picker-item[data-value=small]::before) {
+  content: '小号';
+  font-size: .75em;
+}
+
+:deep(.ql-snow .ql-picker.ql-size .ql-picker-item[data-value=large]::before) {
+  content: '大号';
+  font-size: 1.5em;
+}
+
+:deep(.ql-snow .ql-picker.ql-size .ql-picker-item[data-value=huge]::before) {
+  content: '特大';
+  font-size: 2.5em;
 }
 
 @keyframes rich-editor-spin {
