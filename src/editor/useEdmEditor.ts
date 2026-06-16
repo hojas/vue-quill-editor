@@ -81,7 +81,7 @@ export interface UseEdmEditorEmit {
 const toolbarConfig = [
   [{ header: [1, 2, false] }, { font: Object.keys(CUSTOM_FONTS) }],
   ['bold', 'italic', 'underline', 'strike'],
-  [{ list: 'ordered' }, { list: 'bullet' }, 'blockquote', 'code-block'],
+  [{ align: [] }, { list: 'ordered' }, { list: 'bullet' }, 'blockquote', 'code-block'],
   ['link', 'edmImage', 'edmVideo', 'edmFile'],
   ['clean'],
 ]
@@ -376,6 +376,10 @@ export function useEdmEditor(props: UseEdmEditorProps, emit: UseEdmEditorEmit): 
       'ql-edmImage': '图片',
       'ql-edmVideo': '视频',
       'ql-edmFile': '文件',
+      'ql-align[value=""]': '左对齐',
+      'ql-align[value="center"]': '居中',
+      'ql-align[value="right"]': '右对齐',
+      'ql-align[value="justify"]': '两端对齐',
       'ql-clean': '清除格式',
     }
 
