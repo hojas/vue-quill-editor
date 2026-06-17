@@ -40,7 +40,9 @@
     "vue": "^3.4.0"
   },
   "dependencies": {
+    "@tinymce/tinymce-vue": "^6.3.0",
     "@vercel/blob": "^2.4.0",
+    "tinymce": "^8.6.0",
     "vue-router": "^5.1.0"
   },
   "devDependencies": {

@@ -2,10 +2,14 @@
 import type { EdmAttachment, EdmUploadKind, EdmUploadResult } from '../shared/types'
 import { ref } from 'vue'
 import RichTextEditor from '../editor/RichTextEditor.vue'
+import TinyMceEditor from '../tinymce/TinyMceEditor.vue'
 import EdmContentViewer from '../viewer/EdmContentViewer.vue'
 
-/** 编辑器内容（HTML） */
+/** Quill 编辑器内容（HTML） */
 const content = ref()
+
+/** TinyMCE 编辑器内容（HTML） */
+const tinymceContent = ref()
 
 /** 控制编辑器显示/隐藏 */
 const showEditor = ref(true)
@@ -82,15 +86,15 @@ async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise
   <main class="app-shell">
     <header class="app-header">
       <p class="app-header__eyebrow">
-        Vue 3 · TypeScript · Quill 2.0.3
+        Vue 3 · TypeScript · Quill 2.0.3 + TinyMCE 8
       </p>
       <h1>EDM 富文本编辑器</h1>
     </header>
 
     <div class="app-panes">
-      <section class="app-pane" aria-label="编辑器">
+      <section class="app-pane" aria-label="Quill 编辑器">
         <h2 class="app-pane__title">
-          编辑
+          Quill 编辑
           <button class="app-pane__toggle" @click="showEditor = !showEditor">
             {{ showEditor ? '隐藏编辑器' : '显示编辑器' }}
           </button>
@@ -106,9 +110,22 @@ async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise
         />
       </section>
 
+      <section class="app-pane" aria-label="TinyMCE 编辑器">
+        <h2 class="app-pane__title">
+          TinyMCE 编辑
+        </h2>
+        <TinyMceEditor
+          v-model="tinymceContent"
+          :upload="uploadEdm"
+          :fetch-config="fetchEdmConfig"
+          :resolve-preview-url="resolvePreviewUrl"
+          :resolve-download-url="resolveDownloadUrl"
+        />
+      </section>
+
       <section class="app-pane" aria-label="预览">
         <h2 class="app-pane__title">
-          预览
+          预览（Quill）
         </h2>
         <EdmContentViewer
           class="app-preview"
@@ -120,8 +137,13 @@ async function resolveDownloadUrl(_attachmentId: string, edmId: string): Promise
     </div>
 
     <details class="app-html-dump">
-      <summary>HTML 输出</summary>
+      <summary>Quill HTML 输出</summary>
       <pre>{{ content }}</pre>
+    </details>
+
+    <details class="app-html-dump">
+      <summary>TinyMCE HTML 输出</summary>
+      <pre>{{ tinymceContent }}</pre>
     </details>
   </main>
 </template>
