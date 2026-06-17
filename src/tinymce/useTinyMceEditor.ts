@@ -155,6 +155,7 @@ export function useTinyMceEditor(
       if (!ed || nextValue === lastHtml.value)
         return
       ed.setContent(nextValue)
+      bootstrapMedia()
       syncHtmlFromEditor()
     },
   )
@@ -333,6 +334,22 @@ export function useTinyMceEditor(
     void props.resolveDownloadUrl?.(attachmentId, edmId, 'file')
   }
 
+  // ---- Bootstrap media on content load ----
+  function bootstrapMedia(): void {
+    const ed = editorRef.value
+    if (!ed)
+      return
+    const root = ed.getBody()
+    if (!root)
+      return
+    root.querySelectorAll<HTMLElement>('edm-image, edm-video').forEach((el) => {
+      const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video')
+      if (media && media.dataset.src && !media.src) {
+        media.src = media.dataset.src
+      }
+    })
+  }
+
   // ---- editorInit ----
   const editorInit = computed<Record<string, any>>(() => ({
     license_key: 'gpl',
@@ -408,11 +425,14 @@ export function useTinyMceEditor(
         syncHtmlFromEditor()
       })
 
-      // Initial content
-      if (props.modelValue) {
-        editor.setContent(props.modelValue)
-        syncHtmlFromEditor()
-      }
+      // Initial content — defer to 'init' event (editor fully ready)
+      editor.on('init', () => {
+        if (props.modelValue) {
+          editor.setContent(props.modelValue)
+          bootstrapMedia()
+          syncHtmlFromEditor()
+        }
+      })
     },
   }))
 
