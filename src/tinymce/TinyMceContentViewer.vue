@@ -154,4 +154,97 @@ function handleFileDownload(event: MouseEvent): void {
 .tinymce-viewer__body {
   font-size: 15px;
 }
+
+/* ---- Rich text element reset — 隔离外部样式对 v-html 内容的影响 ---- */
+.tinymce-viewer__body :deep(p) {
+  margin: 0 0 8px;
+}
+
+.tinymce-viewer__body :deep(h1) {
+  font-size: 2em;
+  margin: 0.67em 0;
+  font-weight: bold;
+}
+
+.tinymce-viewer__body :deep(h2) {
+  font-size: 1.5em;
+  margin: 0.75em 0;
+  font-weight: bold;
+}
+
+.tinymce-viewer__body :deep(h3) {
+  font-size: 1.17em;
+  margin: 0.83em 0;
+  font-weight: bold;
+}
+
+.tinymce-viewer__body :deep(ul) {
+  padding-left: 24px;
+  list-style: disc;
+}
+
+.tinymce-viewer__body :deep(ol) {
+  padding-left: 24px;
+  list-style: decimal;
+}
+
+.tinymce-viewer__body :deep(li) {
+  margin: 4px 0;
+}
+
+.tinymce-viewer__body :deep(blockquote) {
+  margin: 0;
+  padding-left: 16px;
+  border-left: 4px solid #ccc;
+}
+
+.tinymce-viewer__body :deep(pre) {
+  padding: 12px;
+  border-radius: 6px;
+  background: #1e293b;
+  color: #e2e8f0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.tinymce-viewer__body :deep(code) {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #d63384;
+  font-size: 0.9em;
+}
+
+.tinymce-viewer__body :deep(pre code) {
+  padding: 0;
+  background: none;
+  color: inherit;
+}
+
+.tinymce-viewer__body :deep(a) {
+  color: #1a56db;
+  text-decoration: underline;
+}
+
+.tinymce-viewer__body :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+
+.tinymce-viewer__body :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tinymce-viewer__body :deep(th) {
+  border: 1px solid #d7dee8;
+  padding: 8px 12px;
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.tinymce-viewer__body :deep(td) {
+  border: 1px solid #d7dee8;
+  padding: 8px 12px;
+}
 </style>
