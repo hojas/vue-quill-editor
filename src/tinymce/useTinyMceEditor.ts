@@ -228,6 +228,7 @@ export function useTinyMceEditor(
       const html = buildEmbedHtml(kind, embedValue)
 
       ed.insertContent(html)
+      bootstrapMedia()
       pendingCount--
       syncHtmlFromEditor()
       emit('upload-success', { file, kind, result })
@@ -276,11 +277,11 @@ export function useTinyMceEditor(
       const w = (value as any).width ? `width:${(value as any).width}px;max-width:none;` : ''
       const h = (value as any).height ? `height:${(value as any).height}px;` : ''
       const style = w || h ? ` style="${w}${h}"` : ''
-      return `<edm-image class="ql-edm-image ql-edm-loaded" data-edm-id="${edmId}" data-edm-type="image"${aid}${name}${mime}${size}><img src="${url}" alt="${escapeAttr(value.name || 'uploaded image')}" data-src="${url}" data-edm-id="${edmId}" data-edm-type="image"${aid}${style}></edm-image>`
+      return `<edm-image class="ql-edm-image ql-edm-loading" data-edm-id="${edmId}" data-edm-type="image"${aid}${name}${mime}${size}><img src="${url}" alt="${escapeAttr(value.name || 'uploaded image')}" data-src="${url}" data-edm-id="${edmId}" data-edm-type="image"${aid}${style}></edm-image>`
     }
 
     if (kind === 'video') {
-      return `<edm-video class="ql-edm-video ql-edm-loaded" data-edm-id="${edmId}" data-edm-type="video"${aid}${name}${mime}${size}><video src="${url}" controls preload="metadata" playsinline data-src="${url}" data-edm-id="${edmId}" data-edm-type="video"${aid}></video></edm-video>`
+      return `<edm-video class="ql-edm-video ql-edm-loading" data-edm-id="${edmId}" data-edm-type="video"${aid}${name}${mime}${size}><video src="${url}" controls preload="metadata" playsinline data-src="${url}" data-edm-id="${edmId}" data-edm-type="video"${aid}></video></edm-video>`
     }
 
     const fileName = escapeAttr(value.name || `edm-file-${value.edmId}`)
@@ -344,7 +345,36 @@ export function useTinyMceEditor(
       return
     root.querySelectorAll<HTMLElement>('edm-image, edm-video').forEach((el) => {
       const media = el.querySelector<HTMLImageElement | HTMLVideoElement>('img, video')
-      if (media && media.dataset.src && !media.src) {
+      if (!media)
+        return
+
+      // Already loaded or errored — skip
+      if (el.classList.contains('ql-edm-loaded') || el.classList.contains('ql-edm-error'))
+        return
+
+      const src = media.dataset.src || media.src
+      if (!src)
+        return
+
+      el.classList.add('ql-edm-loading')
+      const onLoad = (): void => {
+        el.classList.remove('ql-edm-loading')
+        el.classList.add('ql-edm-loaded')
+      }
+      const onError = (): void => {
+        el.classList.remove('ql-edm-loading')
+        el.classList.add('ql-edm-error')
+      }
+      if (media instanceof HTMLVideoElement) {
+        media.onloadedmetadata = onLoad
+      }
+      else {
+        media.onload = onLoad
+      }
+      media.onerror = onError
+
+      // Set src from data-src if not already set
+      if (!media.src && media.dataset.src) {
         media.src = media.dataset.src
       }
     })
@@ -381,6 +411,20 @@ export function useTinyMceEditor(
       edm-file { display: block; margin: 8px 0; }
       edm-file a { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid #d7dee8; border-radius: 6px; background: #f8fbff; color: #205493; font-size: 13px; text-decoration: none; cursor: pointer; }
       edm-file a:hover { border-color: #89aed8; background: #eef6ff; }
+
+      .ql-edm-loading { position: relative; overflow: hidden; }
+      .ql-edm-image.ql-edm-loading { min-height: 200px; background: #f0f4f8; }
+      .ql-edm-video.ql-edm-loading { min-height: 220px; background: #1a1f2e; }
+      .ql-edm-loading::after {
+        content: ''; position: absolute; top: 50%; left: 50%;
+        width: 24px; height: 24px; margin: -12px 0 0 -12px;
+        border: 2px solid #d7dee8; border-top-color: #205493;
+        border-radius: 50%; animation: edm-spin 0.7s linear infinite;
+      }
+      .ql-edm-loading img, .ql-edm-loading video { opacity: 0; }
+      .ql-edm-loaded img, .ql-edm-loaded video { opacity: 1; }
+      .ql-edm-error { border-color: #fca5a5; background: #fef2f2; }
+      @keyframes edm-spin { to { transform: rotate(360deg); } }
     `,
 
     placeholder: props.placeholder,
