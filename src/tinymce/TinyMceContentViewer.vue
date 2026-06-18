@@ -247,4 +247,53 @@ function handleFileDownload(event: MouseEvent): void {
   border: 1px solid #d7dee8;
   padding: 8px 12px;
 }
+
+/* ---- EDM lazy-loading / loaded / error states ---- */
+.tinymce-viewer__body :deep(.ql-edm-loading) {
+  position: relative;
+  overflow: hidden;
+}
+
+.tinymce-viewer__body :deep(.ql-edm-image.ql-edm-loading) {
+  min-height: 200px;
+  background: #f0f4f8;
+}
+
+.tinymce-viewer__body :deep(.ql-edm-video.ql-edm-loading) {
+  min-height: 220px;
+  background: #1a1f2e;
+}
+
+.tinymce-viewer__body :deep(.ql-edm-loading::after) {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: tinymce-viewer-shimmer 1.5s ease-in-out infinite;
+}
+
+.tinymce-viewer__body :deep(.ql-edm-loading img),
+.tinymce-viewer__body :deep(.ql-edm-loading video) {
+  opacity: 0;
+}
+
+.tinymce-viewer__body :deep(.ql-edm-loaded img),
+.tinymce-viewer__body :deep(.ql-edm-loaded video) {
+  opacity: 1;
+}
+
+.tinymce-viewer__body :deep(.ql-edm-error) {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+@keyframes tinymce-viewer-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
 </style>
