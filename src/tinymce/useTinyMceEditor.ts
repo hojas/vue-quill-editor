@@ -420,15 +420,6 @@ export function useTinyMceEditor(
         handleFileDownloadClick(evt as any)
       })
 
-      // Disable TinyMCE context menu on images and videos only
-      editor.on('contextmenu', (evt) => {
-        const target = (evt as any).target as HTMLElement | null
-        if (target && (target.tagName === 'IMG' || target.tagName === 'VIDEO')) {
-          evt.preventDefault()
-          evt.stopPropagation()
-        }
-      })
-
       // HTML sync on change
       editor.on('change', () => {
         syncHtmlFromEditor()
@@ -436,6 +427,19 @@ export function useTinyMceEditor(
 
       // Initial content — defer to 'init' event (editor fully ready)
       editor.on('init', () => {
+        // Disable context menu on images and videos (capture phase, before TinyMCE)
+        editor.getBody().addEventListener(
+          'contextmenu',
+          (e) => {
+            const target = e.target as HTMLElement | null
+            if (target && (target.tagName === 'IMG' || target.tagName === 'VIDEO')) {
+              e.preventDefault()
+              e.stopPropagation()
+            }
+          },
+          true,
+        )
+
         if (props.modelValue) {
           editor.setContent(props.modelValue)
           bootstrapMedia()
