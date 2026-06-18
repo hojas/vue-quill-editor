@@ -267,14 +267,15 @@ function handleFileDownload(event: MouseEvent): void {
 .tinymce-viewer__body :deep(.ql-edm-loading::after) {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    transparent 100%
-  );
-  animation: tinymce-viewer-shimmer 1.5s ease-in-out infinite;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 2px solid #d7dee8;
+  border-top-color: #205493;
+  border-radius: 50%;
+  animation: tinymce-viewer-spin 0.7s linear infinite;
 }
 
 .tinymce-viewer__body :deep(.ql-edm-loading img),
@@ -292,8 +293,9 @@ function handleFileDownload(event: MouseEvent): void {
   background: #fef2f2;
 }
 
-@keyframes tinymce-viewer-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+@keyframes tinymce-viewer-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
