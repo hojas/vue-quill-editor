@@ -357,7 +357,6 @@ export function useTinyMceEditor(
     promotion: false,
     statusbar: false,
     menubar: false,
-    contextmenu: false,
     resize: true,
 
     // Allow EDM custom elements
@@ -419,6 +418,15 @@ export function useTinyMceEditor(
       // File download click handling
       editor.on('click', (evt) => {
         handleFileDownloadClick(evt as any)
+      })
+
+      // Disable TinyMCE context menu on images and videos only
+      editor.on('contextmenu', (evt) => {
+        const target = (evt as any).target as HTMLElement | null
+        if (target && (target.tagName === 'IMG' || target.tagName === 'VIDEO')) {
+          evt.preventDefault()
+          evt.stopPropagation()
+        }
       })
 
       // HTML sync on change
