@@ -420,6 +420,14 @@ export function useTinyMceEditor(
         handleFileDownloadClick(evt as any)
       })
 
+      // Disable right-click on images and videos
+      editor.on('contextmenu', (evt) => {
+        const target = (evt as any).target as HTMLElement | null
+        if (target && (target.tagName === 'IMG' || target.tagName === 'VIDEO')) {
+          evt.preventDefault()
+        }
+      })
+
       // HTML sync on change
       editor.on('change', () => {
         syncHtmlFromEditor()
