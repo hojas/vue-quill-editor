@@ -357,6 +357,7 @@ export function useTinyMceEditor(
     promotion: false,
     statusbar: false,
     menubar: false,
+    contextmenu: 'link',
     resize: true,
 
     // Allow EDM custom elements
@@ -427,19 +428,6 @@ export function useTinyMceEditor(
 
       // Initial content — defer to 'init' event (editor fully ready)
       editor.on('init', () => {
-        // Disable context menu on images and videos (capture phase, before TinyMCE)
-        editor.getBody().addEventListener(
-          'contextmenu',
-          (e) => {
-            const target = e.target as HTMLElement | null
-            if (target && (target.tagName === 'IMG' || target.tagName === 'VIDEO')) {
-              e.preventDefault()
-              e.stopPropagation()
-            }
-          },
-          true,
-        )
-
         if (props.modelValue) {
           editor.setContent(props.modelValue)
           bootstrapMedia()
