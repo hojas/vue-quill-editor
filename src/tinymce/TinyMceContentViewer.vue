@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EdmUploadKind, EdmUrlResolver } from '../shared/types'
 
-import { nextTick, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { toUrl } from '../shared/utils'
 import '../shared/edm-embeds.css'
 
@@ -14,6 +14,7 @@ const props = defineProps<{
 }>()
 
 const containerRef = useTemplateRef<HTMLDivElement>('containerRef')
+const lightboxSrc = ref<string | null>(null)
 
 /** 懒加载观察器（单例） */
 let viewObserver: IntersectionObserver | null = null
@@ -135,12 +136,50 @@ function handleFileDownload(event: MouseEvent): void {
   if (edmId)
     void props.resolveDownloadUrl?.(attachmentId, edmId, 'file')
 }
+
+// ---- image lightbox ----
+function handleViewerClick(event: MouseEvent): void {
+  handleFileDownload(event)
+
+  const target = event.target as HTMLElement
+  const img = target.closest<HTMLImageElement>('.ql-edm-image img, edm-image img')
+  if (img && img.src) {
+    event.preventDefault()
+    lightboxSrc.value = img.src
+  }
+}
+
+function closeLightbox(): void {
+  lightboxSrc.value = null
+}
+
+function onLightboxKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape')
+    closeLightbox()
+}
 </script>
 
 <template>
-  <div ref="containerRef" class="tinymce-viewer" @click="handleFileDownload">
+  <div ref="containerRef" class="tinymce-viewer" @click="handleViewerClick">
     <div class="tinymce-viewer__body" v-html="content" />
   </div>
+
+  <!-- Lightbox -->
+  <Teleport to="body">
+    <div
+      v-if="lightboxSrc"
+      class="tinymce-lightbox"
+      role="dialog"
+      aria-label="图片预览"
+      @click="closeLightbox"
+      @keydown="onLightboxKeydown"
+    >
+      <button class="tinymce-lightbox__close" aria-label="关闭" @click="closeLightbox">
+        ✕
+      </button>
+      <img :src="lightboxSrc" class="tinymce-lightbox__img" @click.stop>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -231,6 +270,11 @@ function handleFileDownload(event: MouseEvent): void {
   height: auto;
 }
 
+.tinymce-viewer__body :deep(.ql-edm-image img),
+.tinymce-viewer__body :deep(edm-image img) {
+  cursor: zoom-in;
+}
+
 .tinymce-viewer__body :deep(table) {
   border-collapse: collapse;
   width: 100%;
@@ -297,5 +341,52 @@ function handleFileDownload(event: MouseEvent): void {
   to {
     transform: rotate(360deg);
   }
+}
+</style>
+
+<style>
+/* Lightbox — Teleported to body, must be unscoped */
+.tinymce-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.82);
+  animation: tinymce-lightbox-in 0.2s ease-out;
+}
+
+.tinymce-lightbox__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.tinymce-lightbox__close:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.tinymce-lightbox__img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+@keyframes tinymce-lightbox-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>
